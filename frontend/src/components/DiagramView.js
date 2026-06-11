@@ -17,20 +17,19 @@ function DiagramView({ code, title }) {
   }, [code])
 
   useEffect(() => {
+    const renderDiagram = async () => {
+      if (!diagramRef.current) return
+      try {
+        setError(null)
+        const id = "diagram-" + Date.now()
+        const { svg } = await mermaid.render(id, editableCode)
+        diagramRef.current.innerHTML = svg
+      } catch (err) {
+        setError("Diagram syntax error. Try editing the code below.")
+      }
+    }
     renderDiagram()
   }, [editableCode])
-
-  const renderDiagram = async () => {
-    if (!diagramRef.current) return
-    try {
-      setError(null)
-      const id = "diagram-" + Date.now()
-      const { svg } = await mermaid.render(id, editableCode)
-      diagramRef.current.innerHTML = svg
-    } catch (err) {
-      setError("Diagram syntax error. Try editing the code below.")
-    }
-  }
 
   return (
     <div className="diagram-view">

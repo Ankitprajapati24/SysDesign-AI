@@ -25,11 +25,11 @@ function App() {
 
       const result = await response.json()
 
-      if (result.success) {
+      if (response.ok && result.success) {
         setData(result.data)
         setActiveTab("srs")
       } else {
-        setError("Something went wrong. Please try again.")
+        setError(result.detail || "Something went wrong. Please try again.")
       }
     } catch (err) {
       setError("Cannot connect to backend. Make sure it is running.")
