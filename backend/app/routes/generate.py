@@ -73,7 +73,7 @@ async def generate_artifacts(
 
         return {
             "success": True,
-            "project_id": saved_project.id,
+            "Project ID": saved_project.id,
             "title": saved_project.title,
             "data": artifacts
         }
