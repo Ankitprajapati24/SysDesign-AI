@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SE Assistant</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;
+  --sidebar:#111318;
+  --surface:#161920;
+  --surface2:#1e2028;
+  --border:#252830;
+  --border2:#2e3240;
+  --accent:#7c6aff;
+  --accent-dim:rgba(124,106,255,.12);
+  --green:#2dd4a0;
+  --green-dim:rgba(45,212,160,.1);
+  --text:#e2e4ee;
+  --muted:#6b7090;
+  --muted2:#8b90aa;
+  --danger:#ff4f6a;
+  --warn:#ffaa3d;
+  --radius:10px;
+  --mono:'JetBrains Mono','Fira Code',monospace;
+  --sans:'Inter','Segoe UI',system-ui,sans-serif;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── AUTH SCREEN ── */
+#authScreen{
+  position:fixed;inset:0;z-index:1000;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+}
+.auth-box{
+  width:380px;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:16px;
+  padding:36px 32px;
+}
+.auth-logo{font-size:20px;font-weight:700;margin-bottom:6px;letter-spacing:-.3px}
+.auth-logo span{color:var(--accent)}
+.auth-sub{font-size:13px;color:var(--muted2);margin-bottom:28px}
+.auth-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.auth-tab{
+  padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;
+  border:none;background:none;color:var(--muted);
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;
+}
+.auth-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.auth-input{
+  width:100%;padding:10px 14px;background:var(--surface2);
+  border:1px solid var(--border2);border-radius:8px;
+  color:var(--text);font-size:14px;font-family:var(--sans);
+  margin-bottom:10px;outline:none;transition:border-color .2s;
+}
+.auth-input:focus{border-color:var(--accent)}
+.auth-btn{
+  width:100%;padding:11px;background:var(--accent);color:#fff;
+  border:none;border-radius:8px;font-size:14px;font-weight:600;
+  cursor:pointer;transition:opacity .15s;margin-top:4px;
+}
+.auth-btn:hover{opacity:.88}
+.auth-err{font-size:12px;color:var(--danger);margin-top:8px;min-height:18px}
+
+/* ── MAIN APP ── */
+#app{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:248px;min-width:248px;
+  background:var(--sidebar);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.sidebar-top{
+  padding:14px 16px 10px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sidebar-logo{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.sidebar-logo span{color:var(--accent)}
+.new-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:6px 12px;background:var(--accent);color:#fff;
+  border:none;border-radius:7px;font-size:12px;font-weight:600;
+  cursor:pointer;transition:opacity .15s;
+}
+.new-btn:hover{opacity:.85}
+.sidebar-section{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);padding:14px 16px 6px}
+.project-item{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 16px;cursor:pointer;
+  border-left:3px solid transparent;
+  transition:all .12s;position:relative;
+}
+.project-item:hover{background:var(--surface2)}
+.project-item.active{background:var(--accent-dim);border-left-color:var(--accent)}
+.project-item .p-icon{
+  width:28px;height:28px;border-radius:7px;
+  background:var(--surface2);display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;color:var(--muted2);
+}
+.project-item.active .p-icon{background:var(--accent-dim);color:var(--accent)}
+.p-meta{flex:1;min-width:0}
+.p-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-date{font-size:11px;color:var(--muted);margin-top:1px}
+.p-del{
+  opacity:0;padding:3px 5px;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:13px;border-radius:5px;transition:all .12s;
+}
+.project-item:hover .p-del{opacity:1}
+.p-del:hover{background:rgba(255,79,106,.15);color:var(--danger)}
+.sidebar-list{flex:1;overflow-y:auto;padding:4px 0}
+.sidebar-user{
+  padding:12px 16px;border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.user-avatar{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--accent-dim);border:1px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;color:var(--accent);
+}
+.user-email{font-size:12px;color:var(--muted2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logout-btn{
+  padding:4px 8px;background:none;border:1px solid var(--border2);
+  border-radius:5px;color:var(--muted);font-size:11px;cursor:pointer;
+  transition:all .12s;
+}
+.logout-btn:hover{color:var(--danger);border-color:var(--danger)}
+
+/* ── CENTER: CHAT ── */
+.chat-area{
+  flex:1;display:flex;flex-direction:column;
+  min-width:0;background:var(--bg);
+}
+.chat-header{
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.project-name-input{
+  background:none;border:none;outline:none;color:var(--text);
+  font-size:15px;font-weight:600;font-family:var(--sans);
+  flex:1;
+}
+.project-name-input::placeholder{color:var(--muted)}
+.chat-header-actions{display:flex;align-items:center;gap:8px}
+.status-chip{
+  font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;
+}
+.status-chip.saved{background:var(--green-dim);color:var(--green)}
+.status-chip.unsaved{background:rgba(255,170,61,.1);color:var(--warn)}
+
+.messages{flex:1;overflow-y:auto;padding:20px}
+.msg{display:flex;gap:12px;margin-bottom:18px;align-items:flex-start}
+.msg.assistant{flex-direction:row}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+}
+.msg.assistant .msg-avatar{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(124,106,255,.3)}
+.msg.user .msg-avatar{background:var(--surface2);color:var(--muted2)}
+.msg-bubble{
+  max-width:72%;padding:11px 15px;border-radius:12px;font-size:14px;line-height:1.6;
+}
+.msg.user .msg-bubble{background:var(--surface2);border:1px solid var(--border2)}
+.msg.assistant .msg-bubble{background:transparent;padding:4px 0;border:none}
+
+/* artifact trigger button inside message */
+.artifact-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 14px;margin-top:8px;
+  background:var(--surface2);border:1px solid var(--border2);border-radius:8px;
+  font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--text);
+}
+.artifact-chip:hover{border-color:var(--accent);color:var(--accent)}
+.artifact-chip .dot{
+  width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 5px var(--green);
+}
+
+/* empty/welcome state */
+.welcome{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:40px 24px;text-align:center;
+}
+.welcome h2{font-size:22px;font-weight:700;margin-bottom:8px}
+.welcome p{font-size:14px;color:var(--muted2);max-width:380px;line-height:1.7}
+.suggestion-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  margin-top:24px;width:100%;max-width:500px;
+}
+.suggestion{
+  padding:12px 14px;background:var(--surface);
+  border:1px solid var(--border2);border-radius:10px;
+  font-size:13px;color:var(--muted2);cursor:pointer;
+  text-align:left;transition:all .15s;line-height:1.5;
+}
+.suggestion:hover{border-color:var(--accent);color:var(--text)}
+.suggestion strong{display:block;font-size:12px;color:var(--muted);margin-bottom:3px;font-weight:600}
+
+/* chat input */
+.chat-input-wrap{
+  padding:16px 20px;border-top:1px solid var(--border);flex-shrink:0;
+}
+.chat-input-box{
+  display:flex;align-items:flex-end;gap:10px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:10px 12px;
+  transition:border-color .2s;
+}
+.chat-input-box:focus-within{border-color:var(--accent)}
+.chat-textarea{
+  flex:1;background:none;border:none;outline:none;resize:none;
+  color:var(--text);font-size:14px;font-family:var(--sans);
+  max-height:140px;min-height:24px;line-height:1.6;overflow-y:auto;
+}
+.chat-textarea::placeholder{color:var(--muted)}
+.send-btn{
+  width:34px;height:34px;border-radius:8px;
+  background:var(--accent);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:opacity .15s;
+}
+.send-btn:hover{opacity:.85}
+.send-btn:disabled{opacity:.3;cursor:not-allowed}
+.send-btn svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2}
+
+/* typing indicator */
+.typing{display:flex;gap:4px;align-items:center;padding:4px 0}
+.typing span{
+  width:7px;height:7px;border-radius:50%;background:var(--muted);
+  animation:bounce .9s infinite;
+}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+/* ── RIGHT: ARTIFACTS PANEL ── */
+.artifacts-panel{
+  width:520px;min-width:420px;max-width:600px;
+  background:var(--surface);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  resize:horizontal;
+}
+.artifacts-header{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.artifacts-header h3{font-size:13px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px}
+.tab-bar{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.tab-btn{
+  padding:7px 14px;font-size:12px;font-weight:600;
+  border:none;background:none;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  white-space:nowrap;transition:all .15s;border-radius:6px 6px 0 0;
+}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-dim)}
+.tab-content{display:none;flex:1;overflow-y:auto;padding:0}
+.tab-content.active{display:block}
+
+/* SRS */
+.srs-wrap{padding:18px}
+.srs-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.srs-purpose{font-size:13px;color:var(--muted2);margin-bottom:18px;line-height:1.6}
+.srs-section-head{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--accent);margin-bottom:8px;
+  padding-bottom:6px;border-bottom:1px solid var(--border);
+}
+.srs-block{margin-bottom:18px}
+.srs-text{font-size:13px;color:#c0c4dc;line-height:1.7}
+.req-list{display:flex;flex-direction:column;gap:8px}
+.req-item{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;
+}
+.req-row{display:flex;align-items:flex-start;gap:10px}
+.req-id{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  background:var(--accent-dim);color:var(--accent);
+  padding:2px 7px;border-radius:4px;white-space:nowrap;margin-top:1px;flex-shrink:0;
+}
+.req-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.req-desc{font-size:12px;color:var(--muted2);line-height:1.5}
+.nfr-type{
+  font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;margin-top:1px;flex-shrink:0;
+}
+.t-perf{background:rgba(45,212,160,.1);color:var(--green)}
+.t-sec{background:rgba(255,79,106,.1);color:var(--danger)}
+.t-usa{background:rgba(124,106,255,.12);color:var(--accent)}
+.t-rel{background:rgba(255,170,61,.1);color:var(--warn)}
+.constraint-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.constraint-list li{
+  font-size:12px;color:var(--muted2);
+  padding:6px 10px;background:var(--surface2);border-radius:6px;
+  border-left:2px solid var(--border2);
+}
+
+/* Diagrams */
+.diagrams-wrap{padding:14px;display:flex;flex-direction:column;gap:12px}
+.diagram-card{
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;
+}
+.diagram-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+}
+.diagram-head h4{font-size:12px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px}
+.diagram-actions{display:flex;gap:6px}
+.dg-btn{
+  font-size:11px;padding:3px 9px;background:none;
+  border:1px solid var(--border2);border-radius:5px;
+  color:var(--muted);cursor:pointer;transition:all .12s;
+}
+.dg-btn:hover{border-color:var(--accent);color:var(--accent)}
+.diagram-body{
+  padding:16px;min-height:120px;
+  display:flex;align-items:center;justify-content:center;
+}
+.diagram-body.loading{color:var(--muted);font-size:12px;gap:8px}
+.diagram-src{
+  display:none;
+  font-family:var(--mono);font-size:11.5px;
+  background:var(--bg);border-top:1px solid var(--border);
+  padding:12px 14px;white-space:pre-wrap;color:#9da5c7;
+  max-height:200px;overflow-y:auto;
+}
+.mermaid-render{width:100%;overflow-x:auto;text-align:center}
+.mermaid-render svg{max-width:100%;height:auto}
+
+/* SQL */
+.sql-wrap{padding:16px}
+.sql-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sql-toolbar span{font-size:12px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px}
+.sql-pre{
+  font-family:var(--mono);font-size:12px;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;padding:14px;overflow-x:auto;
+  white-space:pre;line-height:1.7;color:#c0c8e8;
+  min-height:200px;
+}
+.sql-kw{color:#cc82e8}.sql-type{color:#7dd3fc}.sql-str{color:#86efac}
+
+/* empty artifact */
+.artifact-empty{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  height:100%;padding:40px 24px;text-align:center;color:var(--muted);
+  gap:10px;
+}
+.artifact-empty .icon-wrap{
+  width:56px;height:56px;border-radius:14px;
+  background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+}
+.artifact-empty p{font-size:13px;line-height:1.6;max-width:240px}
+
+/* scroll */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+/* spinner */
+.spin{
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(124,106,255,.3);border-top-color:var(--accent);
+  animation:spin .6s linear infinite;display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* toast */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:7px}
+.toast{
+  padding:10px 16px;background:var(--surface);border:1px solid var(--border2);
+  border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;
+  box-shadow:0 6px 20px rgba(0,0,0,.4);animation:tslide .2s ease;max-width:300px;
+}
+@keyframes tslide{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.ok{border-left:3px solid var(--green)}
+.toast.err{border-left:3px solid var(--danger)}
+
+/* mermaid svg override */
+.mermaid-render .node rect,.mermaid-render .node circle{stroke:#3c4060!important}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH SCREEN ── -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">SE <span>Assistant</span></div>
+    <div class="auth-sub">AI-powered software engineering artifacts</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+    </div>
+    <input id="authEmail" class="auth-input" type="email" placeholder="Email" autocomplete="email"/>
+    <input id="authPassword" class="auth-input" type="password" placeholder="Password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doAuth()"/>
+    <button class="auth-btn" onclick="doAuth()" id="authBtn">Login</button>
+    <div class="auth-err" id="authErr"></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-logo">SE <span>Assist</span></div>
+      <button class="new-btn" onclick="newProject()">+ New</button>
+    </div>
+    <div class="sidebar-section">Projects</div>
+    <div class="sidebar-list" id="projectList"></div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-email" id="userEmail">—</div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-area">
+    <div class="chat-header">
+      <input class="project-name-input" id="projectNameInput" placeholder="New Project"
+        onblur="saveProjectName()" onkeydown="if(event.key==='Enter')this.blur()"/>
+      <div class="chat-header-actions">
+        <span class="status-chip saved" id="saveStatus">Saved</span>
+      </div>
+    </div>
+
+    <div id="messagesWrap" style="display:none;flex:1;overflow-y:auto;padding:20px" class="messages" id="messages"></div>
+
+    <div id="welcomeState" class="welcome">
+      <div style="font-size:36px;margin-bottom:12px">✦</div>
+      <h2>Describe your project</h2>
+      <p>Tell me what you're building. I'll generate an SRS document, ER diagram, class diagram, sequence diagram, and SQL schema.</p>
+      <div class="suggestion-grid">
+        <div class="suggestion" onclick="useSuggestion(this)"><strong>E-commerce</strong>Online store with products, cart, orders, and payment flow</div>
+        <div class="suggestion" onclick="useSuggestion(this)"><strong>Social app</strong>User profiles, posts, comments, likes, and following system</div>
+        <div class="suggestion" onclick="useSuggestion(this)"><strong>Booking system</strong>Appointments, availability calendar, reminders, and notifications</div>
+        <div class="suggestion" onclick="useSuggestion(this)"><strong>SaaS dashboard</strong>Teams, roles, subscription plans, usage tracking, and billing</div>
+      </div>
+    </div>
+
+    <div class="chat-input-wrap">
+      <div class="chat-input-box">
+        <textarea class="chat-textarea" id="chatInput" rows="1" placeholder="Describe your project or ask for changes..."
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARTIFACTS PANEL -->
+  <div class="artifacts-panel" id="artifactsPanel">
+    <div class="artifacts-header">
+      <h3>Artifacts</h3>
+      <span class="spin" id="artifactSpinner" style="display:none"></span>
+    </div>
+
+    <div id="artifactEmpty" class="artifact-empty" style="display:flex">
+      <div class="icon-wrap">✦</div>
+      <p>Artifacts will appear here after you send a message</p>
+    </div>
+
+    <div id="artifactContent" style="display:none;flex:1;display:none;flex-direction:column;overflow:hidden">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab(event,'srs')">SRS</button>
+        <button class="tab-btn" onclick="switchTab(event,'diagrams')">Diagrams</button>
+        <button class="tab-btn" onclick="switchTab(event,'sql')">SQL</button>
+      </div>
+
+      <!-- SRS TAB -->
+      <div id="tab-srs" class="tab-content active">
+        <div class="srs-wrap" id="srsOutput"></div>
+      </div>
+
+      <!-- DIAGRAMS TAB -->
+      <div id="tab-diagrams" class="tab-content">
+        <div class="diagrams-wrap" id="diagramsOutput"></div>
+      </div>
+
+      <!-- SQL TAB -->
+      <div id="tab-sql" class="tab-content">
+        <div class="sql-wrap">
+          <div class="sql-toolbar">
+            <span>SQL Schema</span>
+            <div style="display:flex;gap:6px">
+              <button class="dg-btn" onclick="copySql()">Copy</button>
+              <button class="dg-btn" onclick="downloadSql()">Download .sql</button>
+            </div>
+          </div>
+          <pre class="sql-pre" id="sqlOutput"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+// ── CONFIG ──
+const BASE = 'http://localhost:8000';
+let accessToken = '';
+let currentUser = null;
+let currentProjectId = null;
+let projects = [];
+let currentArtifacts = null;
+let authMode = 'login';
+
+mermaid.initialize({
+  startOnLoad: false, theme: 'dark',
+  themeVariables: {
+    background: '#161920', primaryColor: '#7c6aff',
+    primaryTextColor: '#e2e4ee', primaryBorderColor: '#252830',
+    lineColor: '#6b7090', secondaryColor: '#1e2028',
+    tertiaryColor: '#1e2028', fontFamily: 'Inter,sans-serif', fontSize: '12px',
+    edgeLabelBackground: '#161920',
+  }
+});
+
+// ── AUTH ──
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0 && mode==='login')||(i===1 && mode==='register')));
+  document.getElementById('authBtn').textContent = mode === 'login' ? 'Login' : 'Register';
+  document.getElementById('authErr').textContent = '';
+}
+
+async function doAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authErr');
+  const btn = document.getElementById('authBtn');
+  if (!email || !pass) { errEl.textContent = 'Fill in all fields'; return; }
+  btn.textContent = '…'; btn.disabled = true;
+  try {
+    const r = await apiFetch('/api/auth/' + authMode, 'POST', { email, password: pass });
+    if (r.access_token) {
+      accessToken = r.access_token;
+      await loadMe();
+      enterApp();
+    } else {
+      errEl.textContent = r.detail || r.message || 'Authentication failed';
+    }
+  } catch(e) {
+    errEl.textContent = e.message || 'Server error';
+  }
+  btn.textContent = authMode === 'login' ? 'Login' : 'Register'; btn.disabled = false;
+}
+
+async function loadMe() {
+  try {
+    const r = await apiFetch('/api/auth/me');
+    currentUser = r;
+    const email = r.email || r.username || 'User';
+    document.getElementById('userEmail').textContent = email;
+    document.getElementById('userAvatar').textContent = email[0].toUpperCase();
+  } catch {}
+}
+
+function enterApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  loadProjects().then(() => newProject());
+}
+
+async function logout() {
+  try { await apiFetch('/api/auth/logout', 'POST'); } catch {}
+  accessToken = ''; currentUser = null;
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ── API ──
+async function apiFetch(path, method = 'GET', body) {
+  const opts = {
+    method, credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(BASE + path, opts);
+  if (res.status === 401) {
+    try {
+      const ref = await fetch(BASE + '/api/auth/refresh', { method: 'POST', credentials: 'include' });
+      const rd = await ref.json();
+      if (rd.access_token) {
+        accessToken = rd.access_token;
+        opts.headers.Authorization = `Bearer ${accessToken}`;
+        const retry = await fetch(BASE + path, opts);
+        return retry.json();
+      }
+    } catch {}
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || data.message || `HTTP ${res.status}`);
+  return data;
+}
+
+// ── PROJECTS ──
+async function loadProjects() {
+  try {
+    const data = await apiFetch('/api/projects/');
+    projects = Array.isArray(data) ? data : (data.projects || data.data || []);
+    renderSidebar();
+  } catch {}
+}
+
+function renderSidebar() {
+  const el = document.getElementById('projectList');
+  if (!projects.length) {
+    el.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:var(--muted)">No projects yet</div>`;
+    return;
+  }
+  el.innerHTML = projects.map(p => `
+    <div class="project-item ${p.id === currentProjectId ? 'active' : ''}" onclick="openProject(${p.id})">
+      <div class="p-icon">◈</div>
+      <div class="p-meta">
+        <div class="p-name">${escHtml(p.title || 'Untitled')}</div>
+        <div class="p-date">${p.created_at ? new Date(p.created_at).toLocaleDateString() : ''}</div>
+      </div>
+      <button class="p-del" onclick="event.stopPropagation();deleteProject(${p.id})" title="Delete">✕</button>
+    </div>`).join('');
+}
+
+async function openProject(id) {
+  currentProjectId = id;
+  const p = projects.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('projectNameInput').value = p.title || '';
+  setStatus('saved');
+  renderSidebar();
+  clearChat();
+
+  // switch from welcome state to chat view
+  document.getElementById('welcomeState').style.display = 'none';
+  document.getElementById('messagesWrap').style.display = 'block';
+
+  // reset artifacts panel before loading this project's artifacts
+  currentArtifacts = null;
+  hideArtifacts();
+
+  // load artifacts from stored data
+  let content = null;
+  if (p.artifacts?.length) {
+    const art = p.artifacts[0];
+    content = art.content;
+    if (typeof content === 'string') { try { content = JSON.parse(content); } catch {} }
+  }
+
+  // show project summary message
+  if (p.description) {
+    appendMessage('user', p.description);
+  }
+
+  if (content && typeof content === 'object') {
+    currentArtifacts = content;
+    appendMessage('assistant', 'Here are the artifacts I generated for this project. Click any tab on the right to explore.', true, content);
+    showArtifacts(content);
+  } else if (p.description) {
+    appendMessage('assistant', 'No artifacts found for this project yet.');
+  }
+}
+
+async function saveProjectName() {
+  if (!currentProjectId) return;
+  const title = document.getElementById('projectNameInput').value.trim() || 'Untitled Project';
+  const p = projects.find(x => x.id === currentProjectId);
+  if (p && p.title === title) return; // nothing changed
+  try {
+    await apiFetch(`/api/projects/${currentProjectId}`, 'PUT', { title });
+    setStatus('saved');
+    await loadProjects();
+  } catch(e) {
+    toast(e.message, 'err');
+  }
+}
+
+async function deleteProject(id) {
+  if (!confirm('Delete this project?')) return;
+  try {
+    await apiFetch(`/api/projects/${id}`, 'DELETE');
+    if (currentProjectId === id) newProject();
+    await loadProjects();
+    toast('Deleted', 'ok');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function newProject() {
+  currentProjectId = null;
+  currentArtifacts = null;
+  document.getElementById('projectNameInput').value = '';
+  setStatus('saved');
+  renderSidebar();
+  clearChat();
+  hideArtifacts();
+  document.getElementById('welcomeState').style.display = 'flex';
+  document.getElementById('messagesWrap').style.display = 'none';
+}
+
+// ── CHAT ──
+function clearChat() {
+  document.getElementById('messagesWrap').innerHTML = '';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+function useSuggestion(el) {
+  document.getElementById('chatInput').value = el.textContent.replace(el.querySelector('strong').textContent, '').trim();
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; autoResize(input);
+
+  document.getElementById('welcomeState').style.display = 'none';
+  const wrap = document.getElementById('messagesWrap');
+  wrap.style.display = 'block';
+
+  appendMessage('user', text);
+
+  // typing
+  const typingId = 'typing-' + Date.now();
+  wrap.insertAdjacentHTML('beforeend', `
+    <div class="msg assistant" id="${typingId}">
+      <div class="msg-avatar">✦</div>
+      <div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>
+    </div>`);
+  scrollChat();
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('artifactSpinner').style.display = 'inline-block';
+
+  try {
+    const res = await apiFetch('/api/generate', 'POST', { description: text });
+    document.getElementById(typingId)?.remove();
+    const data = res.data || res;
+    currentArtifacts = data;
+
+    // set project name from SRS if new
+    if (data.srs?.project_title && !document.getElementById('projectNameInput').value) {
+      document.getElementById('projectNameInput').value = data.srs.project_title;
+    }
+
+    appendMessage('assistant',
+      `I've generated the full artifact suite for <strong>${escHtml(data.srs?.project_title || 'your project')}</strong>. Here's what's ready:`,
+      true, data
+    );
+    showArtifacts(data);
+    setStatus('saved');
+
+    // auto-save as new project (backend persists this automatically)
+    await autoSave(data, text);
+
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    appendMessage('assistant', `Sorry, something went wrong: ${e.message}`);
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('artifactSpinner').style.display = 'none';
+  scrollChat();
+}
+
+async function autoSave(data, description) {
+  const title = document.getElementById('projectNameInput').value.trim() || 'Untitled Project';
+  try {
+    if (!currentProjectId) {
+      const res = await apiFetch('/api/projects/', 'POST', {
+        title,
+        description: description || '',
+        artifacts: [{ artifact_type: 'full_bundle', content: data }]
+      });
+      currentProjectId = res.id || res.project_id;
+    }
+    setStatus('saved');
+    await loadProjects();
+  } catch {}
+}
+
+function appendMessage(role, html, withChips = false, data = null) {
+  const wrap = document.getElementById('messagesWrap');
+  const initials = role === 'user' ? (currentUser?.email?.[0]?.toUpperCase() || 'U') : '✦';
+  let chipsHtml = '';
+  if (withChips && data) {
+    const chips = [];
+    if (data.srs) chips.push(['📄', 'SRS', 'srs']);
+    if (data.erd_mermaid || data.class_diagram_mermaid || data.sequence_diagram_mermaid) chips.push(['◈', 'Diagrams', 'diagrams']);
+    if (data.sql_schema) chips.push(['🗄️', 'SQL Schema', 'sql']);
+    chipsHtml = chips.map(([icon, label, tab]) =>
+      `<div class="artifact-chip" onclick="focusTab('${tab}')"><span class="dot"></span>${icon} ${label}</div>`
+    ).join('');
+  }
+  wrap.insertAdjacentHTML('beforeend', `
+    <div class="msg ${role}">
+      <div class="msg-avatar">${initials}</div>
+      <div class="msg-bubble">${html}${chipsHtml}</div>
+    </div>`);
+  scrollChat();
+}
+
+function scrollChat() {
+  const w = document.getElementById('messagesWrap');
+  w.scrollTop = w.scrollHeight;
+}
+
+// ── ARTIFACTS ──
+function showArtifacts(data) {
+  document.getElementById('artifactEmpty').style.display = 'none';
+  const ac = document.getElementById('artifactContent');
+  ac.style.display = 'flex';
+  ac.style.flexDirection = 'column';
+  ac.style.overflow = 'hidden';
+  ac.style.flex = '1';
+
+  renderSRS(data.srs);
+  renderDiagrams(data);
+  renderSQL(data.sql_schema);
+}
+
+function hideArtifacts() {
+  document.getElementById('artifactEmpty').style.display = 'flex';
+  document.getElementById('artifactContent').style.display = 'none';
+}
+
+function focusTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const tabs = ['srs', 'diagrams', 'sql'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function switchTab(e, tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ── SRS RENDER ──
+function renderSRS(srs) {
+  const el = document.getElementById('srsOutput');
+  if (!srs) { el.innerHTML = '<div class="artifact-empty" style="display:flex"><p>No SRS data</p></div>'; return; }
+  const typeClass = { Performance:'t-perf', Security:'t-sec', Usability:'t-usa', Reliability:'t-rel' };
+  el.innerHTML = `
+    <div class="srs-title">${escHtml(srs.project_title || 'Project')}</div>
+    ${srs.purpose ? `<div class="srs-purpose">${escHtml(srs.purpose)}</div>` : ''}
+
+    ${srs.scope ? `<div class="srs-block">
+      <div class="srs-section-head">Scope</div>
+      <div class="srs-text">${escHtml(srs.scope)}</div>
+    </div>` : ''}
+
+    ${srs.user_classes?.length ? `<div class="srs-block">
+      <div class="srs-section-head">User Classes</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${srs.user_classes.map(u => `<span style="font-size:12px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted2)">${escHtml(u)}</span>`).join('')}
+      </div>
+    </div>` : ''}
+
+    ${srs.functional_requirements?.length ? `<div class="srs-block">
+      <div class="srs-section-head">Functional Requirements</div>
+      <div class="req-list">
+        ${srs.functional_requirements.map(r => `
+          <div class="req-item">
+            <div class="req-row">
+              <span class="req-id">${escHtml(r.id)}</span>
+              <div>
+                <div class="req-title">${escHtml(r.title)}</div>
+                <div class="req-desc">${escHtml(r.description)}</div>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    ${srs.non_functional_requirements?.length ? `<div class="srs-block">
+      <div class="srs-section-head">Non-Functional Requirements</div>
+      <div class="req-list">
+        ${srs.non_functional_requirements.map(r => `
+          <div class="req-item">
+            <div class="req-row">
+              <span class="nfr-type ${typeClass[r.type] || 't-rel'}">${escHtml(r.type)}</span>
+              <div>
+                <div class="req-id" style="display:inline;font-size:10px">${escHtml(r.id)}</div>
+                <div class="req-desc" style="margin-top:3px">${escHtml(r.description)}</div>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    ${srs.constraints?.length ? `<div class="srs-block">
+      <div class="srs-section-head">Constraints</div>
+      <ul class="constraint-list">
+        ${srs.constraints.map(c => `<li>${escHtml(c)}</li>`).join('')}
+      </ul>
+    </div>` : ''}
+  `;
+}
+
+// ── DIAGRAMS ──
+const DIAGRAM_DEFS = [
+  { key: 'erd_mermaid',             label: 'Entity Relationship Diagram' },
+  { key: 'class_diagram_mermaid',   label: 'Class Diagram' },
+  { key: 'sequence_diagram_mermaid',label: 'Sequence Diagram' },
+  { key: 'flowchart_mermaid',       label: 'Flowchart' },
+];
+
+function renderDiagrams(data) {
+  const el = document.getElementById('diagramsOutput');
+  const available = DIAGRAM_DEFS.filter(d => data[d.key]);
+  // also catch any extra *_mermaid keys
+  Object.keys(data).forEach(k => {
+    if (k.endsWith('_mermaid') && !DIAGRAM_DEFS.find(d => d.key === k)) {
+      available.push({ key: k, label: k.replace(/_mermaid$/, '').replace(/_/g, ' ') });
+    }
+  });
+
+  if (!available.length) {
+    el.innerHTML = '<div class="artifact-empty" style="display:flex"><p>No diagrams in response</p></div>';
+    return;
+  }
+
+  el.innerHTML = available.map((d, i) => {
+    const cid = `diag-${i}-${Date.now()}`;
+    return `
+      <div class="diagram-card">
+        <div class="diagram-head">
+          <h4>${escHtml(d.label)}</h4>
+          <div class="diagram-actions">
+            <button class="dg-btn" onclick="toggleSrc('${cid}', this)">Source</button>
+            <button class="dg-btn" onclick="downloadSVG('${cid}', '${d.key}')">⬇ SVG</button>
+          </div>
+        </div>
+        <div class="diagram-body loading" id="${cid}">
+          <span class="spin"></span>&nbsp;Rendering…
+        </div>
+        <pre class="diagram-src" id="src-${cid}">${escHtml(data[d.key])}</pre>
+      </div>`;
+  }).join('');
+
+  available.forEach((d, i) => {
+    const card = el.querySelectorAll('.diagram-card')[i];
+    const bodyEl = card?.querySelector('.diagram-body');
+    if (!bodyEl) return;
+    const bodyId = bodyEl.id;
+
+    setTimeout(async () => {
+      try {
+        const { svg } = await mermaid.render('msvg-' + bodyId, data[d.key]);
+        const body = document.getElementById(bodyId);
+        body.innerHTML = `<div class="mermaid-render">${svg}</div>`;
+        body.classList.remove('loading');
+      } catch(err) {
+        const body = document.getElementById(bodyId);
+        body.innerHTML = `<div style="color:var(--danger);font-size:12px;padding:8px">⚠ ${escHtml(err.message)}</div>`;
+        body.classList.remove('loading');
+      }
+    }, 80 * (i + 1));
+  });
+}
+
+function toggleSrc(id, btn) {
+  const src = document.getElementById('src-' + id);
+  const showing = src.style.display === 'block';
+  src.style.display = showing ? 'none' : 'block';
+  btn.textContent = showing ? 'Source' : 'Hide';
+}
+
+async function downloadSVG(bodyId, name) {
+  const body = document.getElementById(bodyId);
+  const svg = body?.querySelector('svg');
+  if (!svg) { toast('No SVG yet', 'err'); return; }
+  const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name + '.svg' });
+  a.click(); toast('SVG downloaded', 'ok');
+}
+
+// ── SQL ──
+function renderSQL(sql) {
+  const el = document.getElementById('sqlOutput');
+  if (!sql) { el.textContent = '-- No SQL schema'; return; }
+  el.innerHTML = highlightSQL(escHtml(sql));
+}
+
+function highlightSQL(s) {
+  const kws = ['CREATE','TABLE','PRIMARY','KEY','FOREIGN','REFERENCES','NOT','NULL','DEFAULT','UNIQUE',
+    'AUTO_INCREMENT','ON','DELETE','CASCADE','UPDATE','INSERT','INDEX','CONSTRAINT','ADD','COLUMN'];
+  const types = ['INT','VARCHAR','TEXT','DATE','TIMESTAMP','BOOLEAN','FLOAT','DECIMAL','BIGINT','SERIAL'];
+  kws.forEach(k => { s = s.replace(new RegExp(`\\b${k}\\b`, 'g'), `<span class="sql-kw">${k}</span>`); });
+  types.forEach(t => { s = s.replace(new RegExp(`\\b${t}\\b`, 'g'), `<span class="sql-type">${t}</span>`); });
+  return s;
+}
+
+function copySql() {
+  const txt = document.getElementById('sqlOutput').textContent;
+  navigator.clipboard.writeText(txt);
+  toast('SQL copied!', 'ok');
+}
+
+function downloadSql() {
+  const txt = document.getElementById('sqlOutput').textContent;
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([txt], { type: 'text/plain' })),
+    download: (document.getElementById('projectNameInput').value || 'schema') + '.sql'
+  });
+  a.click(); toast('.sql downloaded', 'ok');
+}
+
+// ── UTILS ──
+function setStatus(s) {
+  const el = document.getElementById('saveStatus');
+  el.textContent = s === 'saved' ? 'Saved' : 'Unsaved';
+  el.className = 'status-chip ' + s;
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type = 'ok') {
+  const el = Object.assign(document.createElement('div'), { className: `toast ${type}` });
+  el.innerHTML = `${type === 'ok' ? '✓' : '✕'} ${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ── BOOT ──
+// Try auto-login via refresh cookie on load
+(async () => {
+  try {
+    const r = await fetch(BASE + '/api/auth/refresh', { method: 'POST', credentials: 'include' });
+    const d = await r.json();
+    if (d.access_token) {
+      accessToken = d.access_token;
+      await loadMe();
+      enterApp();
+      return;
+    }
+  } catch {}
+  // stay on auth screen
+})();
+</script>
+</body>
+</html>

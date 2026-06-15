@@ -2,7 +2,6 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
-from sqlalchemy.dialects.postgresql import JSONB
 
 class Project(Base):
     __tablename__ = "projects"
@@ -24,7 +23,7 @@ class GeneratedArtifact(Base):
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     artifact_type = Column(String, nullable=False)  # e.g., 'srs', 'architecture', 'api', 'db'
-    content = Column(JSONB, nullable=False)
+    content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

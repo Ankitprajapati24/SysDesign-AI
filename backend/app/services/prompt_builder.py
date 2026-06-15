@@ -34,10 +34,15 @@ Return exactly this JSON structure:
 }}
 
 Rules:
-- erd_mermaid must be valid Mermaid erDiagram syntax
-- class_diagram_mermaid must be valid Mermaid classDiagram syntax  
-- sequence_diagram_mermaid must be valid Mermaid sequenceDiagram syntax
-- sql_schema must be valid SQL CREATE TABLE statements
-- functional_requirements must have at least 5 items
-- Return ONLY the JSON, nothing else
+- Return ONLY valid JSON.
+- Do NOT wrap Mermaid code inside triple backticks.
+- Mermaid fields must contain RAW Mermaid strings.
+- Preserve newline characters using \n.
+- erd_mermaid must begin with "erDiagram".
+- class_diagram_mermaid must begin with "classDiagram".
+- sequence_diagram_mermaid must begin with "sequenceDiagram".
+- Use Mermaid v10 compatible syntax.
+- Avoid Java/C# generics such as List<Task>.
+- Use simple Mermaid syntax that compiles successfully.
+- functional_requirements must contain at least 5 items.
 """

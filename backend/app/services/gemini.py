@@ -16,7 +16,9 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 # Enforce JSON mime-type to guarantee structure parsing works correctly.
 model = genai.GenerativeModel(
     "gemini-2.5-flash",
-    generation_config={"response_mime_type": "application/json"}
+    generation_config={"response_mime_type": "application/json",
+    "temperature": 0.2
+    }
 )
 
 def call_gemini(prompt: str) -> str:

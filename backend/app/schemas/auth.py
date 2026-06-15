@@ -28,4 +28,4 @@ class TokenPayload(BaseModel):
     exp: int | None = None
 
 class TokenRefreshRequest(BaseModel):
-    refresh_token: str
+    refresh_token: str | None = None
