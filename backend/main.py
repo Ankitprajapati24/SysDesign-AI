@@ -1,8 +1,3 @@
-import os
-import sys
-
-# Add parent directory of backend to sys.path to resolve 'backend' imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -10,6 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routes.generate import router
 import google.generativeai as genai
+import os
 import uvicorn
 from dotenv import load_dotenv
 
