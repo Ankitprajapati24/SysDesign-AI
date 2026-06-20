@@ -44,5 +44,6 @@ Rules:
 - Use Mermaid v10 compatible syntax.
 - Avoid Java/C# generics such as List<Task>.
 - Use simple Mermaid syntax that compiles successfully.
+- For erd_mermaid, do NOT use parentheses, commas, or complex SQL constraints (like PRIMARY KEY (col1, col2) or KEY (col)) inside entity attribute blocks. Attributes must strictly follow the format: type name [PK/FK].
 - functional_requirements must contain at least 5 items.
 """

@@ -3,11 +3,11 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 import os, sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from app.core.config import settings
-from app.core.database import Base
-from app.db_models import User, RefreshToken, Project, GeneratedArtifact
+from backend.app.core.config import settings
+from backend.app.core.database import Base
+from backend.app.db_models import User, RefreshToken, Project, GeneratedArtifact
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

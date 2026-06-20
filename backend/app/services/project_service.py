@@ -1,7 +1,7 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
-from app.db_models.project import Project, GeneratedArtifact
-from app.schemas.project import ProjectCreate
+from backend.app.db_models.project import Project, GeneratedArtifact
+from backend.app.schemas.project import ProjectCreate
 
 def create_project(db: Session, project_in: ProjectCreate, user_id: int) -> Project:
     db_project = Project(
@@ -25,10 +25,10 @@ def create_project(db: Session, project_in: ProjectCreate, user_id: int) -> Proj
     return db_project
 
 def list_projects(db: Session, user_id: int) -> List[Project]:
-    return db.query(Project).filter(Project.user_id == user_id).order_by(Project.created_at.desc()).all()
+    return db.query(Project).options(joinedload(Project.artifacts)).filter(Project.user_id == user_id).order_by(Project.created_at.desc()).all()
 
 def get_project(db: Session, project_id: int, user_id: int) -> Optional[Project]:
-    return db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()
+    return db.query(Project).options(joinedload(Project.artifacts)).filter(Project.id == project_id, Project.user_id == user_id).first()
 
 def delete_project(db: Session, project_id: int, user_id: int) -> bool:
     db_project = db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()

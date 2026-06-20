@@ -1,25 +1,39 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.routes.generate import router
-import google.generativeai as genai
 import os
+import sys
+
+# Add parent directory of backend to sys.path to resolve 'backend' imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from backend.app.routes.generate import router
+import google.generativeai as genai
+import uvicorn
 from dotenv import load_dotenv
 
 # Database and Router imports
-from app.core.database import engine
-from app.db_models import Base
-from app.routes.auth import router as auth_router
-from app.routes.projects import router as projects_router
+from backend.app.core.database import engine
+from backend.app.db_models import Base
+from backend.app.routes.auth import router as auth_router
+from backend.app.routes.projects import router as projects_router
+from backend.app.routes.admin import router as admin_router
+from backend.app.routes.sharing import router as sharing_router
 
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
 
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-app = FastAPI(title="SE Assistant API")
+app = FastAPI(title="DesignDoc API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","http://127.0.0.1:5500", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origin_regex=".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,15 +42,41 @@ app.add_middleware(
 app.include_router(router, prefix="/api",tags=["Generation"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 app.include_router(projects_router, prefix="/api/projects", tags=["Projects"])
+app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
+app.include_router(sharing_router, prefix="/api", tags=["Sharing"])
+
+@app.exception_handler(HTTPException)
+async def admin_http_exception_handler(request: Request, exc: HTTPException):
+    if request.url.path.startswith("/api/admin"):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "success": False,
+                "message": exc.detail,
+                "detail": exc.detail
+            }
+        )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
+
+@app.exception_handler(RequestValidationError)
+async def admin_validation_exception_handler(request: Request, exc: RequestValidationError):
+    if request.url.path.startswith("/api/admin"):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "success": False,
+                "message": "Validation Error",
+                "detail": exc.errors()
+            }
+        )
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()}
+    )
 
 @app.get("/")
 def root():
-    return {"message": "SE Assistant API is running"}
-
-@app.get("/test-models")
-def list_models():
-    models = []
-    for m in genai.list_models():
-        if "generateContent" in m.supported_generation_methods:
-            models.append(m.name)
-    return {"available_models": models}
+    return {"message": "DesignDoc API is running"}

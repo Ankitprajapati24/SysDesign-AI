@@ -2,15 +2,10 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 import google.generativeai as genai
+from backend.app.core.config import settings
 
-import google.generativeai as genai
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Configure the Gemini API with the key from environment variables
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Configure the Gemini API with the key from configuration settings
+genai.configure(api_key=settings.GEMINI_API_KEY)
 
 # Using gemini-2.5-flash which is available and fast.
 # Enforce JSON mime-type to guarantee structure parsing works correctly.

@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
-from app.core.dependencies import get_current_user
-from app.db_models.user import User
-from app.schemas.generate import ProjectInput
-from app.services.prompt_builder import build_main_prompt
-from app.services.gemini import call_gemini
-from app.services.parser import parse_response
-from app.services.generation_services import save_generated_project
+from backend.app.core.database import get_db
+from backend.app.core.dependencies import get_current_user
+from backend.app.db_models.user import User
+from backend.app.schemas.generate import ProjectInput
+from backend.app.services.prompt_builder import build_main_prompt
+from backend.app.services.gemini import call_gemini
+from backend.app.services.parser import parse_response
+from backend.app.services.generation_services import save_generated_project
 
 router = APIRouter()
 

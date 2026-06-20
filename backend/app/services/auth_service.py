@@ -2,14 +2,12 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, status
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
-from app.core.config import settings
-from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token
-from app.db_models.user import User, RefreshToken
-from app.schemas.auth import UserCreate, UserLogin, Token
+from backend.app.core.config import settings
+from backend.app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token
+from backend.app.db_models.user import User, RefreshToken
+from backend.app.schemas.auth import UserCreate, UserLogin, Token
 
 def register_user(db: Session, user_in: UserCreate) -> User:
-    print("Password:", user_in.password)
-    print("Length:", len(user_in.password))
     existing_user = db.query(User).filter(User.email == user_in.email).first()
     if existing_user:
         raise HTTPException(

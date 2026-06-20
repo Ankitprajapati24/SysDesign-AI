@@ -16,5 +16,6 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     GEMINI_API_KEY: Optional[str] = None
     GROQ_API_KEY: Optional[str] = None
+    FRONTEND_URL: str = "http://localhost:5173"
 
 settings = Settings()
