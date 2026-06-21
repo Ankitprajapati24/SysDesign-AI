@@ -1,7 +1,6 @@
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-<<<<<<< HEAD
 import random
 import threading
 import logging
@@ -16,13 +15,6 @@ def get_api_keys() -> list[str]:
     if not settings.GEMINI_API_KEY:
         return []
     return [k.strip() for k in settings.GEMINI_API_KEY.split(",") if k.strip()]
-=======
-import google.generativeai as genai
-from backend.app.core.config import settings
-
-# Configure the Gemini API with the key from configuration settings
-genai.configure(api_key=settings.GEMINI_API_KEY)
->>>>>>> origin/feat/admin
 
 # Using gemini-2.5-flash which is available and fast.
 # Enforce JSON mime-type to guarantee structure parsing works correctly.
@@ -34,7 +26,6 @@ model = genai.GenerativeModel(
 )
 
 def call_gemini(prompt: str) -> str:
-<<<<<<< HEAD
     keys = get_api_keys()
     if not keys:
         raise Exception("Gemini API key not configured")
@@ -56,10 +47,3 @@ def call_gemini(prompt: str) -> str:
             continue
             
     raise Exception(f"All configured Gemini API keys failed. Last error: {str(last_error)}")
-=======
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        raise Exception(f"Gemini API error: {str(e)}")
->>>>>>> origin/feat/admin

@@ -538,7 +538,6 @@ git push origin feature/name
 
 ---
 
-<<<<<<< HEAD
 ## 🚀 Production Deployment Guide
 
 **Recommended Stack (Free Tier, No Docker needed):**
@@ -622,8 +621,3 @@ git ls-files | grep -E "\.env$|\.db$|\.log$"
 **Made with ❤️ by the Team**
 
 Last Updated: June 21, 2026
-=======
-**Made with ❤️ by the Team**
-
-Last Updated: May 30, 2026
->>>>>>> origin/feat/admin

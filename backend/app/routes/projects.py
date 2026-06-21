@@ -6,11 +6,7 @@ from backend.app.core.database import get_db
 from backend.app.core.dependencies import get_current_user
 from backend.app.db_models.user import User
 from backend.app.schemas.project import ProjectCreate, ProjectOut
-<<<<<<< HEAD
 from backend.app.services.project_service import create_project, list_projects, get_project, delete_project, update_project
-=======
-from backend.app.services.project_service import create_project, list_projects, get_project, delete_project
->>>>>>> origin/feat/admin
 
 router = APIRouter()
 
@@ -87,7 +83,6 @@ def delete_project_by_id(
             detail="Database error occurred while deleting the project"
         )
 
-<<<<<<< HEAD
 from pydantic import BaseModel
 
 class ProjectUpdate(BaseModel):
@@ -116,6 +111,3 @@ def update_project_by_id(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error occurred while updating the project"
         )
-
-=======
->>>>>>> origin/feat/admin

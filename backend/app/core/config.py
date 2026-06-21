@@ -1,8 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-<<<<<<< HEAD
 from pydantic import field_validator
-=======
->>>>>>> origin/feat/admin
 from typing import Optional
 import os
 
@@ -22,7 +19,6 @@ class Settings(BaseSettings):
     GROQ_API_KEY: Optional[str] = None
     FRONTEND_URL: str = "http://localhost:5173"
 
-<<<<<<< HEAD
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def validate_database_url(cls, v: str) -> str:
@@ -35,7 +31,3 @@ class Settings(BaseSettings):
         return v
 
 settings = Settings()
-
-=======
-settings = Settings()
->>>>>>> origin/feat/admin

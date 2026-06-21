@@ -14,10 +14,7 @@ class UserOut(UserBase):
     model_config = ConfigDict(from_attributes=True)
     
     id: int
-<<<<<<< HEAD
     role: str
-=======
->>>>>>> origin/feat/admin
     is_active: bool
     created_at: datetime
 

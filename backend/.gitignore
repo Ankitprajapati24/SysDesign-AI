@@ -13,16 +13,11 @@ build/
 venv/
 ENV/
 
-<<<<<<< HEAD
 # Environment variables — NEVER COMMIT
-=======
-# Environment variables
->>>>>>> origin/feat/admin
 .env
 .env.local
 .env.*.local
 
-<<<<<<< HEAD
 # Database files — NEVER COMMIT (contains real user data)
 *.db
 *.sqlite
@@ -34,17 +29,8 @@ designdoc.db
 app.log
 logs/
 
-=======
->>>>>>> origin/feat/admin
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/feat/admin
-# Logs
-*.log
