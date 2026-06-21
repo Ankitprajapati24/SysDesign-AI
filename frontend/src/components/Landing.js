@@ -1,11 +1,12 @@
 import React from 'react';
 
-export default function Landing({ onGetStarted, brandName = "ArchFlow" }) {
+export default function Landing({ onGetStarted, brandName = "ArchFlow", colorMode, setColorMode }) {
   // Static content that can be easily edited later
   const teamMembers = [
-    { name: "Ankit Prajapati", role: "Lead Developer" },
-    { name: "Team Member 2", role: "Contributor" },
-    { name: "Team Member 3", role: "Contributor" }
+    { name: "Ankit Prajapati", role: "CSE 3rd Year" },
+    { name: "Anuj Patel", role: "CSE 3rd Year" },
+    { name: "Minisha Solanki", role: "CSE 3rd Year" },
+    { name: "Aniza Hashmi", role: "CSE 3rd Year" }
   ];
 
   const features = [
@@ -34,9 +35,19 @@ export default function Landing({ onGetStarted, brandName = "ArchFlow" }) {
         <div className="landing-minimal-logo" onClick={() => onGetStarted('login')}>
           <span className="logo-brand">{brandName}</span>
         </div>
-        <button className="landing-minimal-signin" onClick={() => onGetStarted('login')}>
-          Sign In
-        </button>
+        <div className="landing-minimal-actions" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <button 
+            className="landing-minimal-theme-btn" 
+            onClick={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')} 
+            title="Toggle theme"
+            style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', padding: '6px' }}
+          >
+            {colorMode === 'dark' ? '☀️' : '🌙'}
+          </button>
+          <button className="landing-minimal-signin" onClick={() => onGetStarted('login')}>
+            Sign In
+          </button>
+        </div>
       </header>
 
       {/* ── Hero Section ── */}

@@ -499,6 +499,10 @@ body:not(.dark) .auth-container-wrapper {
     text-align: center;
     width: 100%;
   }
+  .auth-theme-toggle {
+    top: 20px !important;
+    right: 20px !important;
+  }
   .auth-card {
     grid-template-columns: 1fr;
     max-width: 480px;
