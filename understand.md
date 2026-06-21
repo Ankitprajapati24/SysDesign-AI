@@ -12,9 +12,14 @@ This document provides a comprehensive overview of the **SE Assistant / SDE AI T
    - **ERD (Entity Relationship Diagram)**
    - **Class Diagram**
    - **Sequence Diagram**
+   - **UML diagram**
+   - **Use case diagram**
+   - **Activity diagram**
+   - **DFD**
+   - **Sequence diagrams**
 3. **SQL Schema**: Production-ready database schema definition.
 
-The app supports saving multiple projects, managing user accounts, generating secure public sharing links, and includes a full administrator dashboard for system stats and user management.
+<!-- The app supports saving multiple projects, managing user accounts, generating secure public sharing links, and includes a full administrator dashboard for system stats and user management. -->
 
 ---
 

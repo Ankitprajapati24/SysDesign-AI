@@ -68,7 +68,7 @@ function triggerDownload(url, filename) {
 /* ────────────────────────────────────────────────
    Main DiagramView component
    ──────────────────────────────────────────────── */
-function DiagramView({ code, title }) {
+function DiagramView({ code, title, onUpdateCode }) {
   const diagramRef = useRef(null);
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
@@ -259,7 +259,12 @@ function DiagramView({ code, title }) {
           <textarea
             className="dv-source-ta"
             value={editableCode}
-            onChange={(e) => setEditableCode(e.target.value)}
+            onChange={(e) => {
+              setEditableCode(e.target.value);
+              if (onUpdateCode) {
+                onUpdateCode(e.target.value);
+              }
+            }}
             rows={10}
             spellCheck={false}
           />

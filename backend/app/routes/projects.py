@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from typing import List
+from typing import List, Optional
 from backend.app.core.database import get_db
 from backend.app.core.dependencies import get_current_user
 from backend.app.db_models.user import User
-from backend.app.schemas.project import ProjectCreate, ProjectOut
+from backend.app.schemas.project import ProjectCreate, ProjectOut, GeneratedArtifactCreate
 from backend.app.services.project_service import create_project, list_projects, get_project, delete_project, update_project
 
 router = APIRouter()
@@ -86,7 +86,8 @@ def delete_project_by_id(
 from pydantic import BaseModel
 
 class ProjectUpdate(BaseModel):
-    title: str
+    title: Optional[str] = None
+    artifacts: Optional[List[GeneratedArtifactCreate]] = None
 
 @router.put("/{project_id}", response_model=ProjectOut)
 def update_project_by_id(
@@ -96,7 +97,13 @@ def update_project_by_id(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        project = update_project(db, project_id, project_update.title, current_user.id)
+        project = update_project(
+            db=db,
+            project_id=project_id,
+            title=project_update.title,
+            artifacts=project_update.artifacts,
+            user_id=current_user.id
+        )
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

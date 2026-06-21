@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from backend.app.db_models.project import Project, GeneratedArtifact
-from backend.app.schemas.project import ProjectCreate
+from backend.app.schemas.project import ProjectCreate, GeneratedArtifactCreate
 
 def create_project(db: Session, project_in: ProjectCreate, user_id: int) -> Project:
     db_project = Project(
@@ -37,10 +37,27 @@ def delete_project(db: Session, project_id: int, user_id: int) -> bool:
         db.commit()
         return True
     return False
-def update_project(db: Session, project_id: int, title: str, user_id: int) -> Optional[Project]:
+def update_project(
+    db: Session,
+    project_id: int,
+    title: Optional[str],
+    artifacts: Optional[List[GeneratedArtifactCreate]],
+    user_id: int
+) -> Optional[Project]:
     db_project = db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()
     if db_project:
-        db_project.title = title
+        if title is not None:
+            db_project.title = title
+        if artifacts is not None:
+            # Delete old artifacts for this project and insert the new ones
+            db.query(GeneratedArtifact).filter(GeneratedArtifact.project_id == project_id).delete()
+            for art in artifacts:
+                db_artifact = GeneratedArtifact(
+                    project_id=project_id,
+                    artifact_type=art.artifact_type,
+                    content=art.content
+                )
+                db.add(db_artifact)
         db.commit()
         db.refresh(db_project)
         return db_project

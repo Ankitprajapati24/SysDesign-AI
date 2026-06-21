@@ -266,6 +266,51 @@ function App() {
     }
   };
 
+  const updateLocalArtifact = (key, val) => {
+    setCurrentArtifacts(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, [key]: val };
+      setIsSaved(false);
+      return updated;
+    });
+  };
+
+  const handleSaveProjectChanges = async () => {
+    if (!currentProjectId || !currentArtifacts) return;
+    try {
+      const artifactsList = Object.keys(currentArtifacts).map(key => {
+        const val = currentArtifacts[key];
+        return {
+          artifact_type: key,
+          content: typeof val === 'object' ? JSON.stringify(val) : val
+        };
+      });
+
+      const res = await fetch(`${API_BASE}/api/projects/${currentProjectId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: projectTitle,
+          artifacts: artifactsList
+        })
+      });
+
+      if (res.ok) {
+        showToast("Project saved successfully!", "ok");
+        setIsSaved(true);
+        loadProjects();
+      } else {
+        const d = await res.json();
+        throw new Error(d.detail || "Failed to save project");
+      }
+    } catch (e) {
+      showToast(e.message, "err");
+    }
+  };
+
   const handleSaveProjectName = () => {
     if (!currentProjectId || !projectTitle.trim()) return;
     const p = projects.find(x => x.id === currentProjectId);
@@ -707,6 +752,11 @@ function App() {
           <div className="artifacts-header-actions">
             {currentArtifacts && (
               <>
+                {!isSaved && (
+                  <button className="action-btn" onClick={handleSaveProjectChanges} title="Save changes to database" style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}>
+                    💾 Save
+                  </button>
+                )}
                 <button className="action-btn" onClick={handleCopyArtifact} title="Copy current tab content">
                   <svg viewBox="0 0 24 24">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -769,13 +819,13 @@ function App() {
             {/* Diagram tabs: no padding — dv-root fills the full height */}
             {(activeTab === "erd" || activeTab === "class" || activeTab === "sequence" || activeTab === "flowchart" || activeTab === "usecase" || activeTab === "activity" || activeTab === "dfd") && (
               <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                {activeTab === "erd"       && <DiagramView code={currentArtifacts.erd_mermaid}              title="Entity Relationship Diagram" />}
-                {activeTab === "class"     && <DiagramView code={currentArtifacts.class_diagram_mermaid}    title="Class Diagram" />}
-                {activeTab === "sequence"  && <DiagramView code={currentArtifacts.sequence_diagram_mermaid} title="Sequence Diagram" />}
-                {activeTab === "flowchart" && <DiagramView code={currentArtifacts.flowchart_mermaid}        title="System Flowchart" />}
-                {activeTab === "usecase"   && <DiagramView code={currentArtifacts.use_case_diagram_mermaid} title="Use Case Diagram" />}
-                {activeTab === "activity"  && <DiagramView code={currentArtifacts.activity_diagram_mermaid} title="Activity Diagram" />}
-                {activeTab === "dfd"       && <DiagramView code={currentArtifacts.dfd_mermaid}              title="Data Flow Diagram (DFD)" />}
+                {activeTab === "erd"       && <DiagramView code={currentArtifacts.erd_mermaid}              title="Entity Relationship Diagram" onUpdateCode={(c) => updateLocalArtifact('erd_mermaid', c)} />}
+                {activeTab === "class"     && <DiagramView code={currentArtifacts.class_diagram_mermaid}    title="Class Diagram" onUpdateCode={(c) => updateLocalArtifact('class_diagram_mermaid', c)} />}
+                {activeTab === "sequence"  && <DiagramView code={currentArtifacts.sequence_diagram_mermaid} title="Sequence Diagram" onUpdateCode={(c) => updateLocalArtifact('sequence_diagram_mermaid', c)} />}
+                {activeTab === "flowchart" && <DiagramView code={currentArtifacts.flowchart_mermaid}        title="System Flowchart" onUpdateCode={(c) => updateLocalArtifact('flowchart_mermaid', c)} />}
+                {activeTab === "usecase"   && <DiagramView code={currentArtifacts.use_case_diagram_mermaid} title="Use Case Diagram" onUpdateCode={(c) => updateLocalArtifact('use_case_diagram_mermaid', c)} />}
+                {activeTab === "activity"  && <DiagramView code={currentArtifacts.activity_diagram_mermaid} title="Activity Diagram" onUpdateCode={(c) => updateLocalArtifact('activity_diagram_mermaid', c)} />}
+                {activeTab === "dfd"       && <DiagramView code={currentArtifacts.dfd_mermaid}              title="Data Flow Diagram (DFD)" onUpdateCode={(c) => updateLocalArtifact('dfd_mermaid', c)} />}
               </div>
             )}
 
