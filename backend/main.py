@@ -30,6 +30,7 @@ logger = logging.getLogger("designdoc")
 from backend.app.routes.generate import router
 
 # Database and Router imports
+from backend.app.core.config import settings
 from backend.app.core.database import engine
 from backend.app.db_models import Base
 from backend.app.routes.auth import router as auth_router
@@ -64,9 +65,22 @@ async def log_requests(request: Request, call_next):
             content={"detail": "Internal Server Error"}
         )
 
+# Setup CORS allowed origins securely
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+if settings.FRONTEND_URL:
+    origins.append(settings.FRONTEND_URL)
+
+# Strip trailing slash from frontend url if present
+origins = [origin.rstrip("/") for origin in origins]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=".*",
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
