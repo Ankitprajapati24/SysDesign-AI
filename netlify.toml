@@ -1,0 +1,22 @@
+# Netlify Configuration File
+# --------------------------------------------------
+# This file configures the frontend deployment for Netlify.
+# It points to the 'frontend' subdirectory and sets up
+# proper redirects for single page React app routing.
+
+[build]
+  # Base directory to build from
+  base = "frontend"
+  
+  # Build command (generates optimized static assets)
+  command = "npm run build"
+  
+  # Publish directory containing index.html and assets
+  publish = "build"
+
+# Redirect all routing requests back to index.html 
+# (Necessary for React Router paths to load correctly on refresh)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
