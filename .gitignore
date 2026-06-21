@@ -1,0 +1,73 @@
+# ============================================================
+# ROOT .gitignore — SysDesign-AI
+# ============================================================
+
+# ─── SECRETS & ENVIRONMENT (NEVER COMMIT) ───────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+*.env
+
+# ─── DATABASE FILES (NEVER COMMIT) ──────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+backend/designdoc.db
+
+# ─── LOGS (NEVER COMMIT) ─────────────────────────────────────
+*.log
+logs/
+backend/app.log
+
+# ─── PYTHON ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.Python
+.venv/
+venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ─── NODE / REACT ─────────────────────────────────────────────
+node_modules/
+/frontend/build/
+/frontend/dist/
+/.pnp
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── OS FILES ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDE ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# ─── ALEMBIC / MIGRATIONS ─────────────────────────────────────
+# Keep migrations tracked — do NOT ignore alembic/versions/
+# But ignore local migration temp files
+alembic/env.pyc
+
+# ─── DOCKER (if added later) ──────────────────────────────────
+docker-compose.override.yml

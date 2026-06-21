@@ -538,6 +538,92 @@ git push origin feature/name
 
 ---
 
+<<<<<<< HEAD
+## 🚀 Production Deployment Guide
+
+**Recommended Stack (Free Tier, No Docker needed):**
+
+| Component | Platform | URL |
+|---|---|---|
+| Frontend (React) | **Vercel** | vercel.com |
+| Backend (FastAPI) | **Render** | render.com |
+| Database (PostgreSQL) | **Neon** | neon.tech |
+
+---
+
+### Step 1: Database — Neon.tech (Free PostgreSQL)
+
+1. Go to [neon.tech](https://neon.tech) → Create account → New Project
+2. Copy the **Connection String** (looks like `postgresql://user:pass@host/dbname?sslmode=require`)
+3. Keep it ready for Step 2
+
+---
+
+### Step 2: Backend — Render.com
+
+1. Go to [render.com](https://render.com) → New → **Web Service**
+2. Connect your GitHub repo
+3. Settings:
+   - **Root Directory**: `backend`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Add **Environment Variables** (from `backend/.env.example`):
+   ```
+   GEMINI_API_KEY=your_key_here
+   GROQ_API_KEY=your_key_here
+   DATABASE_URL=postgresql://... (from Neon)
+   SECRET_KEY=generate_with: python -c "import secrets; print(secrets.token_hex(32))"
+   ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   REFRESH_TOKEN_EXPIRE_DAYS=7
+   FRONTEND_URL=https://your-app.vercel.app
+   ```
+5. Deploy → Copy your backend URL (e.g., `https://sysdesign-ai.onrender.com`)
+
+---
+
+### Step 3: Frontend — Vercel
+
+1. Go to [vercel.com](https://vercel.com) → New Project → Import GitHub repo
+2. Settings:
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `build`
+3. Add **Environment Variable**:
+   ```
+   REACT_APP_API_BASE_URL=https://sysdesign-ai.onrender.com
+   ```
+4. Update `frontend/src/config.js` to use the env var:
+   ```js
+   export const API_BASE = process.env.REACT_APP_API_BASE_URL || 
+     (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin);
+   ```
+5. Deploy → Your app is live! 🎉
+
+---
+
+## 🔒 Security Checklist Before Git Push
+
+- [ ] `backend/.env` is in `.gitignore` ✅
+- [ ] `backend/designdoc.db` is in `.gitignore` ✅
+- [ ] `SECRET_KEY` is a strong random hex string (not placeholder) ✅
+- [ ] No API keys hardcoded in any `.js` or `.py` file ✅
+- [ ] Run `git status` to verify secrets are not tracked
+
+```bash
+# Verify nothing sensitive is being tracked:
+git status
+git ls-files | grep -E "\.env$|\.db$|\.log$"
+# Above command should return EMPTY — if not, add to .gitignore
+```
+
+---
+
+**Made with ❤️ by the Team**
+
+Last Updated: June 21, 2026
+=======
 **Made with ❤️ by the Team**
 
 Last Updated: May 30, 2026
+>>>>>>> origin/feat/admin

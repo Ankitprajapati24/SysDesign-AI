@@ -36,6 +36,13 @@ def save_generated_project(
         "erd_mermaid": artifacts.get("erd_mermaid", ""),
         "class_diagram_mermaid": artifacts.get("class_diagram_mermaid", ""),
         "sequence_diagram_mermaid": artifacts.get("sequence_diagram_mermaid", ""),
+<<<<<<< HEAD
+        "flowchart_mermaid": artifacts.get("flowchart_mermaid", ""),
+        "use_case_diagram_mermaid": artifacts.get("use_case_diagram_mermaid", ""),
+        "activity_diagram_mermaid": artifacts.get("activity_diagram_mermaid", ""),
+        "dfd_mermaid": artifacts.get("dfd_mermaid", ""),
+=======
+>>>>>>> origin/feat/admin
         "sql_schema": artifacts.get("sql_schema", "")
     }
 

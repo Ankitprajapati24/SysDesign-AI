@@ -37,3 +37,15 @@ def delete_project(db: Session, project_id: int, user_id: int) -> bool:
         db.commit()
         return True
     return False
+<<<<<<< HEAD
+
+def update_project(db: Session, project_id: int, title: str, user_id: int) -> Optional[Project]:
+    db_project = db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()
+    if db_project:
+        db_project.title = title
+        db.commit()
+        db.refresh(db_project)
+        return db_project
+    return None
+=======
+>>>>>>> origin/feat/admin
