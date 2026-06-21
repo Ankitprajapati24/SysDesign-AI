@@ -10,11 +10,13 @@ import AdminPanel from "./components/AdminPanel";
 import SRSView from "./components/SRSView";
 import DiagramView from "./components/DiagramView";
 import SQLView from "./components/SQLView";
+import Landing from "./components/Landing";
 import "./App.css";
 
 function App() {
-  // App views: 'loading' | 'auth' | 'workspace' | 'admin' | 'share'
+  // App views: 'loading' | 'landing' | 'auth' | 'workspace' | 'admin' | 'share'
   const [view, setView] = useState("loading");
+  const [authMode, setAuthMode] = useState("login");
   
   const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
@@ -115,10 +117,10 @@ function App() {
           const loggedInUser = await meRes.json();
           handleAuthSuccess(d.access_token, loggedInUser);
         } else {
-          setView("auth");
+          setView("landing");
         }
       } catch (err) {
-        setView("auth");
+        setView("landing");
       }
     };
     tryRefresh();
@@ -166,7 +168,7 @@ function App() {
     setCurrentProjectId(null);
     setCurrentArtifacts(null);
     setMessages([]);
-    setView("auth");
+    setView("landing");
   };
 
   const handleSelectProject = (proj) => {
@@ -518,10 +520,35 @@ function App() {
     );
   }
 
+  if (view === "landing") {
+    return (
+      <>
+        <Landing
+          onGetStarted={(mode) => {
+            setAuthMode(mode || "login");
+            setView("auth");
+          }}
+          brandName="ArchFlow"
+        />
+        <div className="toast-container">
+          {toasts.map(t => (
+            <div key={t.id} className={`toast ${t.type}`}>
+              {t.type === "ok" ? "✓" : "✕"} {t.message}
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
   if (view === "auth") {
     return (
       <>
-        <Auth onAuthSuccess={handleAuthSuccess} />
+        <Auth
+          onAuthSuccess={handleAuthSuccess}
+          initialMode={authMode}
+          onGoBack={() => setView("landing")}
+        />
         <div className="toast-container">
           {toasts.map(t => (
             <div key={t.id} className={`toast ${t.type}`}>

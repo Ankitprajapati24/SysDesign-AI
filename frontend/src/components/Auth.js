@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { API_BASE } from '../config';
 
-export default function Auth({ onAuthSuccess }) {
+export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState(initialMode);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -49,9 +49,9 @@ export default function Auth({ onAuthSuccess }) {
 
   return (
     <div className="auth-container-wrapper">
-      {/* SEDocura Logo top left */}
-      <div className="auth-logo-fixed">
-        <span className="auth-logo-brand">SEDocura</span>
+      {/* ArchFlow Logo top left */}
+      <div className="auth-logo-fixed" onClick={() => onGoBack && onGoBack()} style={{ cursor: 'pointer' }}>
+        <span className="auth-logo-brand">ArchFlow</span>
       </div>
 
       <div className="auth-card">
@@ -105,7 +105,7 @@ export default function Auth({ onAuthSuccess }) {
         <div className="auth-card-right">
           {/* Welcome alert box */}
           <div className="auth-welcome-alert">
-            <p>Welcome to <strong>SEDocura</strong> — your AI-powered software engineering workspace.</p>
+            <p>Welcome to <strong>ArchFlow</strong> — your AI-powered software engineering workspace.</p>
           </div>
 
           {/* Google Sign In button */}
