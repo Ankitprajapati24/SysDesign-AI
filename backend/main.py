@@ -43,6 +43,9 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI(title="DesignDoc API")
 
+# Create database tables on startup if they don't exist
+Base.metadata.create_all(bind=engine)
+
 # Request Logging Middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
