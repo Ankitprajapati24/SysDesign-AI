@@ -499,7 +499,7 @@ body:not(.dark) .auth-container-wrapper {
     text-align: center;
     width: 100%;
   }
-  .auth-theme-toggle {
+  .auth-theme-toggle-fixed {
     top: 20px !important;
     right: 20px !important;
   }

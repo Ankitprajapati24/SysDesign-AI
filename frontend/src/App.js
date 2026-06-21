@@ -529,6 +529,8 @@ function App() {
             setView("auth");
           }}
           brandName="ArchFlow"
+          colorMode={colorMode}
+          onToggleTheme={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')}
         />
         <div className="toast-container">
           {toasts.map(t => (
@@ -548,6 +550,8 @@ function App() {
           onAuthSuccess={handleAuthSuccess}
           initialMode={authMode}
           onGoBack={() => setView("landing")}
+          colorMode={colorMode}
+          onToggleTheme={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')}
         />
         <div className="toast-container">
           {toasts.map(t => (

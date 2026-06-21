@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { API_BASE } from '../config';
 
-export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, colorMode, setColorMode }) {
+export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, colorMode, onToggleTheme }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState(initialMode);
@@ -54,26 +54,23 @@ export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, c
         <span className="auth-logo-brand">ArchFlow</span>
       </div>
 
-      {/* Theme Toggle Button top right */}
-      <button 
-        className="auth-theme-toggle" 
-        onClick={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')} 
-        title="Toggle theme"
-        type="button"
-        style={{
-          position: 'absolute',
-          top: '40px',
-          right: '60px',
-          background: 'none',
-          border: 'none',
-          fontSize: '20px',
+      {/* Theme toggle top right */}
+      <div 
+        className="auth-theme-toggle-fixed" 
+        onClick={onToggleTheme} 
+        style={{ 
+          position: 'absolute', 
+          top: '40px', 
+          right: '60px', 
+          zIndex: 10, 
           cursor: 'pointer',
-          zIndex: 10,
+          fontSize: '18px',
           padding: '6px'
         }}
+        title="Toggle theme"
       >
         {colorMode === 'dark' ? '☀️' : '🌙'}
-      </button>
+      </div>
 
       <div className="auth-card">
         {/* Left Side: Branding & Features */}
