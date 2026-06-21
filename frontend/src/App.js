@@ -685,7 +685,7 @@ function App() {
           {messages.length === 0 ? (
             <div className="welcome-state">
               <div className="welcome-icon">📄</div>
-              <h2>DesignDoc Workspace</h2>
+              <h2>ArchFlow Workspace</h2>
               <p>Enter your system specifications below to generate structured requirement documents, technical UML diagrams, and database schemas.</p>
               <div className="suggestion-grid">
                 <div className="suggestion" onClick={() => handleUseSuggestion("E-commerce Store: Online store with products, cart, orders, and payment flow")}>

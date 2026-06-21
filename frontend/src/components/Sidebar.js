@@ -56,8 +56,8 @@ export default function Sidebar({
       {/* Top row: logo + new button */}
       <div className="sidebar-top">
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">DD</div>
-          <span className="sidebar-logo-name">DesignDoc</span>
+          <div className="sidebar-logo-icon">AF</div>
+          <span className="sidebar-logo-name">ArchFlow</span>
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <button className="sidebar-new-btn" onClick={handleNewProjectClick}>
