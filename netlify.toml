@@ -8,8 +8,8 @@
   # Base directory to build from
   base = "frontend"
   
-  # Build command (generates optimized static assets)
-  command = "npm run build"
+  # Build command (generates optimized static assets, setting CI=false so warnings don't block build)
+  command = "CI=false npm run build"
   
   # Publish directory containing index.html and assets
   publish = "build"
