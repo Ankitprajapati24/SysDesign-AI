@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, Response, Request, HTTPException, status
+from fastapi import APIRouter, Depends, Response, Request, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from backend.app.core.database import get_db
 from backend.app.core.dependencies import get_current_user
 from backend.app.core.config import settings
 from backend.app.schemas.auth import UserCreate, UserLogin, UserOut, Token, TokenRefreshRequest
-from backend.app.services.auth_service import register_user, authenticate_user, create_user_tokens, refresh_user_token, revoke_refresh_token
+from backend.app.services.auth_service import register_user, authenticate_user, create_user_tokens, refresh_user_token, revoke_refresh_token, create_guest_user
 from backend.app.db_models.user import User
+from backend.app.core.security import get_password_hash
 
 router = APIRouter()
 
@@ -137,4 +138,58 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.post("/guest", response_model=Token)
+def login_as_guest(
+    request: Request,
+    response: Response,
+    name: str = Query("Guest"),
+    db: Session = Depends(get_db)
+):
+    try:
+        user = create_guest_user(db, name)
+        tokens = create_user_tokens(db, user.id)
+        set_auth_cookies(response, request, tokens)
+        return tokens
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred during guest login"
+        )
+
+@router.post("/convert", response_model=UserOut)
+def convert_guest(
+    convert_in: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "guest":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only guest accounts can be converted"
+        )
+    
+    # Check if email is already taken
+    existing_user = db.query(User).filter(User.email == convert_in.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    current_user.email = convert_in.email
+    current_user.hashed_password = get_password_hash(convert_in.password)
+    current_user.role = "user"
+    
+    try:
+        db.commit()
+        db.refresh(current_user)
+        return current_user
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to convert guest account"
+        )
 

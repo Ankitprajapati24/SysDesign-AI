@@ -36,9 +36,24 @@ export default function Landing({ onGetStarted, brandName = "ArchFlow", colorMod
           <span className="logo-brand">{brandName}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button className="landing-minimal-theme-toggle" onClick={onToggleTheme} title="Toggle theme" style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px' }}>
-            {colorMode === 'dark' ? '☀️' : '🌙'}
-          </button>
+          <div className="mode-toggle">
+            <button
+              type="button"
+              className={`mode-btn ${colorMode === 'dark' ? 'active' : ''}`}
+              onClick={() => colorMode !== 'dark' && onToggleTheme()}
+              title="Dark mode"
+            >
+              Dark
+            </button>
+            <button
+              type="button"
+              className={`mode-btn ${colorMode === 'light' ? 'active' : ''}`}
+              onClick={() => colorMode !== 'light' && onToggleTheme()}
+              title="Light mode"
+            >
+              Light
+            </button>
+          </div>
           <button className="landing-minimal-signin" onClick={() => onGetStarted('login')}>
             Sign In
           </button>

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { API_BASE } from '../config';
 
-export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, colorMode, onToggleTheme }) {
+export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, colorMode, onToggleTheme, onGuestLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState(initialMode);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [guestNameInput, setGuestNameInput] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,12 +32,26 @@ export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, c
         throw new Error(data.detail || data.message || 'Authentication failed');
       }
 
-      if (data.access_token) {
+      let authData = data;
+      if (mode === 'register') {
+        // Auto-login to obtain tokens
+        const loginResponse = await fetch(`${API_BASE}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        authData = await loginResponse.json();
+        if (!loginResponse.ok) {
+          throw new Error(authData.detail || authData.message || 'Auto-login failed');
+        }
+      }
+
+      if (authData.access_token) {
         const meResponse = await fetch(`${API_BASE}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${data.access_token}` }
+          headers: { Authorization: `Bearer ${authData.access_token}` }
         });
         const user = await meResponse.json();
-        onAuthSuccess(data.access_token, user);
+        onAuthSuccess(authData.access_token, user, authData.refresh_token);
       } else {
         setError('Unexpected response from server');
       }
@@ -44,6 +59,18 @@ export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, c
       setError(err.message || 'Server connection error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGuestSubmit = (e) => {
+    e.preventDefault();
+    if (!guestNameInput.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+    setError('');
+    if (onGuestLogin) {
+      onGuestLogin(guestNameInput.trim());
     }
   };
 
@@ -57,19 +84,31 @@ export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, c
       {/* Theme toggle top right */}
       <div 
         className="auth-theme-toggle-fixed" 
-        onClick={onToggleTheme} 
         style={{ 
           position: 'absolute', 
           top: '40px', 
           right: '60px', 
           zIndex: 10, 
-          cursor: 'pointer',
-          fontSize: '18px',
-          padding: '6px'
         }}
-        title="Toggle theme"
       >
-        {colorMode === 'dark' ? '☀️' : '🌙'}
+        <div className="mode-toggle">
+          <button
+            type="button"
+            className={`mode-btn ${colorMode === 'dark' ? 'active' : ''}`}
+            onClick={() => colorMode !== 'dark' && onToggleTheme()}
+            title="Dark mode"
+          >
+            Dark
+          </button>
+          <button
+            type="button"
+            className={`mode-btn ${colorMode === 'light' ? 'active' : ''}`}
+            onClick={() => colorMode !== 'light' && onToggleTheme()}
+            title="Light mode"
+          >
+            Light
+          </button>
+        </div>
       </div>
 
       <div className="auth-card">
@@ -126,87 +165,200 @@ export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, c
             <p>Welcome to <strong>ArchFlow</strong> — your AI-powered software engineering workspace.</p>
           </div>
 
-          {/* Google Sign In button */}
-          <button 
-            type="button" 
-            className="auth-google-btn"
-            onClick={() => alert("Google sign in is configured for demo. Please use the email form to sign in/register.")}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-            </svg>
-            <span>Sign in with Google</span>
-          </button>
-
-          <div className="auth-divider">
-            <span>OR</span>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} noValidate className="auth-form-el">
-            <div className="auth-input-group">
-              <label className="auth-input-label" htmlFor="auth-email">Email</label>
-              <input
-                id="auth-email"
-                type="email"
-                placeholder="you@example.com"
-                className="auth-custom-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                autoComplete="email"
-                required
-              />
-            </div>
-
-            <div className="auth-input-group">
-              <label className="auth-input-label" htmlFor="auth-password">Password</label>
-              <input
-                id="auth-password"
-                type="password"
-                placeholder="••••••••"
-                className="auth-custom-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="auth-error-msg" role="alert">{error}</div>
-            )}
-
-            <button
-              id="auth-submit-btn"
-              type="submit"
-              className="auth-submit-pill-btn"
-              disabled={loading}
-            >
-              {loading
-                ? (mode === 'login' ? 'Signing in...' : 'Creating account...')
-                : (mode === 'login' ? 'Start Designing →' : 'Create Account →')
-              }
-            </button>
-          </form>
-
-          {/* Mode Switcher */}
-          <div className="auth-bottom-switch">
-            <p>
-              {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+          {/* Tab Switcher */}
+          {mode !== 'guest' && (
+            <div className="auth-mode-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--border2, #21262d)', marginBottom: '20px' }}>
               <button
                 type="button"
-                className="auth-switch-link-btn"
-                onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 6px',
+                  background: 'none',
+                  border: 'none',
+                  color: mode === 'login' ? 'var(--accent, #2f81f7)' : 'var(--text-sec, #8b949e)',
+                  borderBottom: mode === 'login' ? '2px solid var(--accent, #2f81f7)' : '2px solid transparent',
+                  fontWeight: mode === 'login' ? '600' : '500',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--sans)',
+                  fontSize: '14px',
+                  transition: 'all 0.15s ease'
+                }}
+                onClick={() => { setMode('login'); setError(''); }}
               >
-                {mode === 'login' ? 'Register here' : 'Sign In'}
+                Sign In
               </button>
+              <button
+                type="button"
+                style={{
+                  flex: 1,
+                  padding: '12px 6px',
+                  background: 'none',
+                  border: 'none',
+                  color: mode === 'register' ? 'var(--accent, #2f81f7)' : 'var(--text-sec, #8b949e)',
+                  borderBottom: mode === 'register' ? '2px solid var(--accent, #2f81f7)' : '2px solid transparent',
+                  fontWeight: mode === 'register' ? '600' : '500',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--sans)',
+                  fontSize: '14px',
+                  transition: 'all 0.15s ease'
+                }}
+                onClick={() => { setMode('register'); setError(''); }}
+              >
+                Create Account
+              </button>
+            </div>
+          )}
+
+          {/* Dynamic welcome header */}
+          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main, #c9d1d9)', margin: '0 0 6px 0' }}>
+              {mode === 'guest' ? 'Continue as Guest' : mode === 'login' ? 'Welcome Back' : 'Get Started Free'}
+            </h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-sec, #8b949e)', margin: 0 }}>
+              {mode === 'guest'
+                ? 'Enter your name to start using ArchFlow instantly. No password required.'
+                : mode === 'login' ? 'Sign in to access your saved architecture designs' : 'Register in seconds to start building software specs'}
             </p>
           </div>
+
+          {mode !== 'guest' ? (
+            <>
+              {/* Guest outline button */}
+              <button 
+                type="button" 
+                className="auth-google-btn"
+                style={{ 
+                  background: 'none', 
+                  border: '1px solid var(--border2)', 
+                  color: 'var(--text-main)', 
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                onClick={() => {
+                  setMode('guest');
+                  setError('');
+                }}
+              >
+                <span style={{ fontSize: '15px' }}>👤</span>
+                <span>Continue as Guest</span>
+              </button>
+
+              <div className="auth-divider">
+                <span>OR</span>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} noValidate className="auth-form-el">
+                <div className="auth-input-group">
+                  <label className="auth-input-label" htmlFor="auth-email">Email</label>
+                  <input
+                    id="auth-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="auth-custom-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+
+                <div className="auth-input-group">
+                  <label className="auth-input-label" htmlFor="auth-password">Password</label>
+                  <input
+                    id="auth-password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="auth-custom-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <div className="auth-error-msg" role="alert">{error}</div>
+                )}
+
+                <button
+                  id="auth-submit-btn"
+                  type="submit"
+                  className="auth-submit-pill-btn"
+                  disabled={loading}
+                >
+                  {loading
+                    ? (mode === 'login' ? 'Signing in...' : 'Creating account...')
+                    : (mode === 'login' ? 'Start Designing →' : 'Create Account →')
+                  }
+                </button>
+              </form>
+
+              {/* Mode Switcher */}
+              <div className="auth-bottom-switch">
+                <p style={{ margin: '4px 0' }}>
+                  {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+                  <button
+                    type="button"
+                    className="auth-switch-link-btn"
+                    onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+                  >
+                    {mode === 'login' ? 'Register here' : 'Sign In'}
+                  </button>
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Guest Form */}
+              <form onSubmit={handleGuestSubmit} noValidate className="auth-form-el">
+                <div className="auth-input-group">
+                  <label className="auth-input-label" htmlFor="auth-guest-name">Your Name</label>
+                  <input
+                    id="auth-guest-name"
+                    type="text"
+                    placeholder="e.g. John Doe"
+                    className="auth-custom-input"
+                    value={guestNameInput}
+                    onChange={(e) => setGuestNameInput(e.target.value)}
+                    disabled={loading}
+                    autoFocus
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <div className="auth-error-msg" role="alert">{error}</div>
+                )}
+
+                <button
+                  id="auth-guest-submit-btn"
+                  type="submit"
+                  className="auth-submit-pill-btn"
+                  disabled={loading}
+                >
+                  Start Designing →
+                </button>
+              </form>
+
+              {/* Mode Switcher */}
+              <div className="auth-bottom-switch">
+                <p style={{ margin: '4px 0' }}>
+                  <button
+                    type="button"
+                    className="auth-switch-link-btn"
+                    onClick={() => { setMode('login'); setError(''); }}
+                  >
+                    ← Back to Sign In
+                  </button>
+                </p>
+              </div>
+            </>
+          )}
 
           <div className="auth-card-footer">
             <p>By signing up, I agree to the <span className="footer-link">Terms of Use</span> and <span className="footer-link">Privacy Policy</span>.</p>

@@ -8,6 +8,77 @@ mermaid.initialize({
 });
 
 /* ────────────────────────────────────────────────
+   Helper: sanitize Mermaid code before rendering
+   Fixes common LLM-generated syntax errors.
+   ──────────────────────────────────────────────── */
+function sanitizeMermaid(code) {
+  if (!code) return code;
+
+  let lines = code.split("\n");
+  const cleaned = [];
+  const isFlowchart = /^\s*(flowchart|graph)\s/i.test(code);
+  const isClassDiag = /^\s*classDiagram/i.test(code);
+  const isErDiag = /^\s*erDiagram/i.test(code);
+
+  for (let line of lines) {
+    const stripped = line.trim();
+
+    // Remove accidental code fences
+    if (stripped === "```mermaid" || stripped === "```" || stripped === "```json") {
+      continue;
+    }
+
+    if (isClassDiag) {
+      // Fix Java/C# generics: List<Task> → List~Task~
+      line = line.replace(/(\w+)<(\w+(?:,\s*\w+)*)>/g, "$1~$2~");
+    }
+
+    if (isFlowchart) {
+      // Fix unquoted labels with parentheses in square brackets
+      // e.g.  Process[Handle Payment (Stripe)] → Process["Handle Payment (Stripe)"]
+      line = line.replace(
+        /(\b\w+)\[([^\]"]*[(){}][^\]"]*)\]/g,
+        (_, id, label) => `${id}["${label.replace(/"/g, "'")}"]`
+      );
+      // Stadium brackets: ([...])
+      line = line.replace(
+        /(\b\w+)\(\[([^\]"]*[(){}][^\]"]*)\]\)/g,
+        (_, id, label) => `${id}(["${label.replace(/"/g, "'")}"])`
+      );
+      // Circle brackets: ((...))
+      line = line.replace(
+        /(\b\w+)\(\(([^)"]*[{}[\]<>][^)"]*)\)\)/g,
+        (_, id, label) => `${id}(("${label.replace(/"/g, "'")}"))` 
+      );
+      // Remove stray semicolons
+      if (stripped.endsWith(";") && !stripped.startsWith("%%")) {
+        line = line.replace(/;$/, "");
+      }
+    }
+
+    if (isErDiag) {
+      // Remove SQL constraint syntax inside entity blocks
+      line = line.replace(/\bPRIMARY\s+KEY\s*\([^)]*\)/gi, "");
+      line = line.replace(/\bFOREIGN\s+KEY\s*\([^)]*\)/gi, "");
+      line = line.replace(/\bNOT\s+NULL\b/gi, "");
+      line = line.replace(/\bAUTO_INCREMENT\b/gi, "");
+      line = line.replace(/\bDEFAULT\s+\S+/gi, "");
+      // Remove commas in attribute lines (but not in relationship lines)
+      if (!stripped.includes("||") && !stripped.includes("--") && !stripped.includes("}")) {
+        line = line.replace(/,/g, "");
+      }
+    }
+
+    // Collapse excess whitespace
+    line = line.replace(/  +/g, " ");
+
+    cleaned.push(line);
+  }
+
+  return cleaned.join("\n");
+}
+
+/* ────────────────────────────────────────────────
    Helper: download an SVG element as PNG / JPEG / SVG
    ──────────────────────────────────────────────── */
 async function downloadDiagram(svgEl, filename, format) {
@@ -87,9 +158,9 @@ function DiagramView({ code, title, onUpdateCode }) {
   // Download dropdown
   const [dlOpen, setDlOpen] = useState(false);
 
-  // Reset view when code changes
+  // Reset view when code changes — sanitize on load
   useEffect(() => {
-    setEditableCode(code || "");
+    setEditableCode(sanitizeMermaid(code || ""));
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, [code]);
@@ -118,7 +189,7 @@ function DiagramView({ code, title, onUpdateCode }) {
   // ── Zoom helpers ──
   const clampZoom = (z) => Math.min(Math.max(z, 0.2), 5);
 
-  const zoomIn  = () => setZoom((z) => clampZoom(+(z + 0.2).toFixed(1)));
+  const zoomIn = () => setZoom((z) => clampZoom(+(z + 0.2).toFixed(1)));
   const zoomOut = () => setZoom((z) => clampZoom(+(z - 0.2).toFixed(1)));
   const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
 

@@ -7,10 +7,46 @@ export default function AdminPanel({ token, onCloseAdmin, onToast }) {
   const [projects, setProjects] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefreshed, setLastRefreshed] = useState(new Date());
 
   useEffect(() => {
     loadAllAdminData();
   }, [search]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(() => {
+      refreshAdminDataSilent();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, search]);
+
+  const refreshAdminDataSilent = async () => {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const statsRes = await fetch(`${API_BASE}/api/admin/stats`, { headers });
+      const sr = await statsRes.json();
+      if (sr.success) setStats(sr.data);
+
+      const usersUrl = search 
+        ? `${API_BASE}/api/admin/users?search=${encodeURIComponent(search)}`
+        : `${API_BASE}/api/admin/users`;
+      const usersRes = await fetch(usersUrl, { headers });
+      const ur = await usersRes.json();
+      if (ur.success) setUsers(ur.data.items || []);
+
+      const projectsRes = await fetch(`${API_BASE}/api/admin/projects`, { headers });
+      const pr = await projectsRes.json();
+      if (pr.success) setProjects(pr.data.items || []);
+      
+      setLastRefreshed(new Date());
+    } catch (e) {
+      console.warn("Silent admin refresh failed:", e);
+    }
+  };
 
   const loadAllAdminData = async () => {
     setLoading(true);
@@ -35,6 +71,8 @@ export default function AdminPanel({ token, onCloseAdmin, onToast }) {
       const projectsRes = await fetch(`${API_BASE}/api/admin/projects`, { headers });
       const pr = await projectsRes.json();
       if (pr.success) setProjects(pr.data.items || []);
+      
+      setLastRefreshed(new Date());
     } catch (e) {
       onToast(e.message || 'Failed to fetch admin data', 'err');
     } finally {
@@ -121,8 +159,34 @@ export default function AdminPanel({ token, onCloseAdmin, onToast }) {
   return (
     <div className="admin-view">
       <div className="admin-header-row">
-        <h2>🛡 System Administration</h2>
-        <button className="back-btn" onClick={onCloseAdmin}>← Back to Workspace</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <h2 style={{ margin: 0 }}>🛡 System Administration</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: 'var(--text-sec)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span className="dot" style={{ width: '8px', height: '8px', background: autoRefresh ? 'var(--success, #3fb950)' : 'var(--text-sec)', borderRadius: '50%', display: 'inline-block' }}></span>
+              {autoRefresh ? 'Live Polling Active' : 'Polling Paused'}
+            </span>
+            <span>Last Updated: {lastRefreshed.toLocaleTimeString()}</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            className="back-btn" 
+            onClick={() => loadAllAdminData()}
+            title="Force refresh all admin metrics"
+            style={{ padding: '7px 12px' }}
+          >
+            🔄 Refresh
+          </button>
+          <button 
+            className="back-btn" 
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            style={{ padding: '7px 12px', borderColor: autoRefresh ? 'var(--accent)' : 'var(--border2)' }}
+          >
+            {autoRefresh ? 'Pause Auto' : 'Resume Auto'}
+          </button>
+          <button className="back-btn" onClick={onCloseAdmin}>← Back</button>
+        </div>
       </div>
 
       {loading && !stats ? (
@@ -173,6 +237,8 @@ export default function AdminPanel({ token, onCloseAdmin, onToast }) {
                     <th>Email</th>
                     <th>Role</th>
                     <th>Projects</th>
+                    <th>Registered</th>
+                    <th>Last Active</th>
                     <th>Status</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
@@ -180,7 +246,7 @@ export default function AdminPanel({ token, onCloseAdmin, onToast }) {
                 <tbody>
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--muted)', padding: '20px' }}>
+                      <td colSpan="8" style={{ textAlign: 'center', color: 'var(--muted)', padding: '20px' }}>
                         No users found
                       </td>
                     </tr>
@@ -190,11 +256,13 @@ export default function AdminPanel({ token, onCloseAdmin, onToast }) {
                         <td>{u.id}</td>
                         <td style={{ fontWeight: 500 }}>{u.email}</td>
                         <td>
-                          <span className={`badge ${u.role === 'admin' ? 'admin' : 'user'}`}>
+                          <span className={`badge ${u.role === 'admin' ? 'admin' : u.role === 'guest' ? 'guest' : 'user'}`}>
                             {u.role}
                           </span>
                         </td>
                         <td>{u.project_count || 0}</td>
+                        <td>{u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</td>
+                        <td>{u.last_generation_at ? new Date(u.last_generation_at).toLocaleString() : 'Never'}</td>
                         <td>
                           <span className={`badge ${u.is_active ? 'active' : 'inactive'}`}>
                             {u.is_active ? 'active' : 'inactive'}
