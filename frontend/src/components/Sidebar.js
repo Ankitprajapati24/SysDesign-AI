@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Logo from './Logo';
 
 const ACCENTS = [
   { name: 'blue', color: '#2f81f7', label: 'Blue' },
@@ -71,7 +72,7 @@ export default function Sidebar({
       {/* Top row: logo + new button */}
       <div className="sidebar-top">
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">AF</div>
+          <Logo size={28} showBackground={true} />
           <span className="sidebar-logo-name">ArchFlow</span>
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>

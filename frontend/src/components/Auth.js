@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { API_BASE } from '../config';
+import Logo from './Logo';
 
 export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, colorMode, onToggleTheme, onGuestLogin }) {
   const [email, setEmail] = useState('');
@@ -77,7 +78,8 @@ export default function Auth({ onAuthSuccess, initialMode = 'login', onGoBack, c
   return (
     <div className="auth-container-wrapper">
       {/* ArchFlow Logo top left */}
-      <div className="auth-logo-fixed" onClick={() => onGoBack && onGoBack()} style={{ cursor: 'pointer' }}>
+      <div className="auth-logo-fixed" onClick={() => onGoBack && onGoBack()} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+        <Logo size={28} showBackground={true} />
         <span className="auth-logo-brand">ArchFlow</span>
       </div>
 
