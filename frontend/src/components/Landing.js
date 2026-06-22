@@ -1,4 +1,5 @@
 import React from 'react';
+import Logo from './Logo';
 
 export default function Landing({ onGetStarted, brandName = "ArchFlow", colorMode, onToggleTheme }) {
   // Static content that can be easily edited later
@@ -32,7 +33,8 @@ export default function Landing({ onGetStarted, brandName = "ArchFlow", colorMod
     <div className="landing-minimal-container">
       {/* ── Navbar ── */}
       <header className="landing-minimal-header">
-        <div className="landing-minimal-logo" onClick={() => onGetStarted('login')}>
+        <div className="landing-minimal-logo" onClick={() => onGetStarted('login')} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+          <Logo size={28} showBackground={true} />
           <span className="logo-brand">{brandName}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

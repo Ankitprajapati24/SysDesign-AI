@@ -12,6 +12,7 @@ import DiagramView from "./components/DiagramView";
 import SQLView from "./components/SQLView";
 import Landing from "./components/Landing";
 import ArtifactLoading from "./components/ArtifactLoading";
+import Logo from "./components/Logo";
 import "./App.css";
 
 function App() {
@@ -825,7 +826,9 @@ function App() {
         <div className="messages">
           {messages.length === 0 ? (
             <div className="welcome-state">
-              <div className="welcome-icon">✦</div>
+              <div className="logo-animated" style={{ marginBottom: "16px" }}>
+                <Logo size={48} showBackground={true} />
+              </div>
               <h2>ArchFlow System Design Workspace</h2>
               <p className="welcome-subtitle">
                 This is a specialized AI systems engineer. Describe your product concept, and it will automatically generate industry-standard SRS docs, UML architecture diagrams, and SQL database schemas.
@@ -1031,7 +1034,9 @@ function App() {
           <ArtifactLoading />
         ) : !currentArtifacts ? (
           <div className="artifact-empty">
-            <div className="artifact-empty-icon">✦</div>
+            <div className="logo-animated" style={{ marginBottom: "14px" }}>
+              <Logo size={52} showBackground={true} />
+            </div>
             <h3>No Artifacts Yet</h3>
             <p>Artifacts will appear here after you send a message.</p>
           </div>
