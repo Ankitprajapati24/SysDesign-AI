@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
 const ACCENTS = [
-  { name: 'blue',   color: '#2f81f7', label: 'Blue'   },
-  { name: 'green',  color: '#3fb950', label: 'Green'  },
+  { name: 'blue', color: '#2f81f7', label: 'Blue' },
+  { name: 'green', color: '#3fb950', label: 'Green' },
   { name: 'purple', color: '#8b5cf6', label: 'Purple' },
   { name: 'orange', color: '#f0883e', label: 'Orange' },
-  { name: 'pink',   color: '#e879f9', label: 'Pink'   },
+  { name: 'pink', color: '#e879f9', label: 'Pink' },
 ];
 
 export default function Sidebar({
@@ -26,9 +26,24 @@ export default function Sidebar({
   onCloseSidebar,
   isCollapsed,
   onCollapse,
+  onConvertGuest,
 }) {
   const [editingProjectId, setEditingProjectId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
+
+  const getDisplayName = (email) => {
+    if (!email) return 'User';
+    if (email.startsWith('guest_') && email.endsWith('@archflow.guest')) {
+      const parts = email.split('@')[0].split('_');
+      const nameParts = parts.slice(1, -1);
+      if (nameParts.length > 0) {
+        const cleanName = nameParts.join(' ');
+        return cleanName === 'Guest' ? 'Guest' : cleanName + ' (Guest)';
+      }
+      return 'Guest';
+    }
+    return email;
+  };
 
   const handleStartEdit = (p) => {
     setEditingProjectId(p.id);
@@ -64,8 +79,8 @@ export default function Sidebar({
             + New
           </button>
           {!mobileOpen && onCollapse && (
-            <button 
-              className="sidebar-collapse-btn" 
+            <button
+              className="sidebar-collapse-btn"
               onClick={onCollapse}
               title="Collapse Sidebar"
             >
@@ -145,40 +160,33 @@ export default function Sidebar({
         </div>
       )}
 
+      {/* Guest convert banner */}
+      {user?.role === 'guest' && (
+        <div className="sidebar-guest-convert-box" style={{ padding: '12px', margin: '8px', background: 'rgba(240, 136, 62, 0.08)', border: '1px solid rgba(240, 136, 62, 0.2)', borderRadius: '8px', fontSize: '12px' }}>
+          <div style={{ color: 'var(--warn-text, #f0883e)', fontWeight: 'bold', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            ⚠️ Guest Session
+          </div>
+          <p style={{ margin: '0 0 8px 0', color: 'var(--text-sec)', lineHeight: '1.4' }}>Save your projects permanently by converting to a free account.</p>
+          <button
+            className="sidebar-convert-btn"
+            style={{ width: '100%', background: 'var(--accent, #2f81f7)', color: '#fff', border: 'none', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}
+            onClick={onConvertGuest}
+          >
+            Upgrade Account
+          </button>
+        </div>
+      )}
+
       {/* Bottom settings */}
       <div className="sidebar-bottom">
-        <div className="sidebar-settings">
-          {/* Dark / Light mode toggle */}
-          <div className="sidebar-settings-row">
-            <span className="settings-label">Mode</span>
-            <div className="mode-toggle">
-              <button
-                className={`mode-btn ${colorMode === 'dark' ? 'active' : ''}`}
-                onClick={() => setColorMode('dark')}
-                title="Dark mode"
-              >
-                Dark
-              </button>
-              <button
-                className={`mode-btn ${colorMode === 'light' ? 'active' : ''}`}
-                onClick={() => setColorMode('light')}
-                title="Light mode"
-              >
-                Light
-              </button>
-            </div>
-          </div>
-
-          {/* Accent color picker removed for standard corporate theme styling */}
-        </div>
 
         {/* User info + logout */}
         <div className="sidebar-user">
           <div className="user-avatar">
-            {user?.email ? user.email[0].toUpperCase() : 'U'}
+            {user?.email ? getDisplayName(user.email)[0].toUpperCase() : 'U'}
           </div>
           <div className="user-email" title={user?.email}>
-            {user?.email || 'User'}
+            {getDisplayName(user?.email)}
           </div>
           <button className="logout-btn" onClick={onLogout}>Logout</button>
         </div>

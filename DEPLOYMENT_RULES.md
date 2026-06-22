@@ -43,3 +43,14 @@ ArchFlow must look premium, modern, and function flawlessly on both desktop and 
 ## 3. Local and Production Environment Consistency
 * **API Base URL Config:** Ensure `REACT_APP_API_BASE_URL` in Netlify does **NOT** contain a trailing slash `/`.
 * **Database migrations:** SQLAlchemy handles table creation automatically on startup. Do not write manual raw SQL DDL files to setup production schemas unless modifying columns.
+
+---
+
+## 4. Developer & AI Agent Protocol (Safety & Testing)
+To prevent issues in the live production project and maintain clean version control history, any developer or AI agent must strictly follow these rules:
+* **Local-First Testing:** Every single update or feature must be run and verified locally first. Do not attempt to apply changes to production/live services without verifying them in the local development environment.
+* **No Unauthorized Git Actions:** Never push or merge changes to Git without explicit approval from the project owner.
+* **Selective Staging:** Stage and push only targeted, updated, and necessary files. Do not commit unnecessary workspace config files or temp files.
+* **Clear Communication:** Always explain what changes you are planning to make, how you will make them, and what the expected impact/result is.
+* **No Assumptions:** If any requirement, architectural pattern, or code detail is unclear, stop and ask the project owner for clarification immediately. Do not make assumptions or proceed with guessing.
+

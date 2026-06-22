@@ -25,6 +25,31 @@ def register_user(db: Session, user_in: UserCreate) -> User:
     db.refresh(db_user)
     return db_user
 
+def create_guest_user(db: Session, name: str = "Guest") -> User:
+    import uuid
+    import secrets
+    
+    unique_id = uuid.uuid4().hex[:8]
+    # Clean the name: keep only alphanumeric, spaces, underscores, hyphens
+    cleaned_name = "".join(c for c in name if c.isalnum() or c in " _-")
+    cleaned_name = cleaned_name.replace(" ", "_").strip("_")
+    if not cleaned_name:
+        cleaned_name = "Guest"
+        
+    guest_email = f"guest_{cleaned_name}_{unique_id}@archflow.guest"
+    random_password = secrets.token_urlsafe(16)
+    
+    db_user = User(
+        email=guest_email,
+        hashed_password=get_password_hash(random_password),
+        role="guest",
+        is_active=True
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
 def authenticate_user(db: Session, user_in: UserLogin) -> User:
     user = db.query(User).filter(User.email == user_in.email).first()
     if not user or not verify_password(user_in.password, user.hashed_password):

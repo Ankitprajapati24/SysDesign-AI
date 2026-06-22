@@ -11,32 +11,40 @@ import SRSView from "./components/SRSView";
 import DiagramView from "./components/DiagramView";
 import SQLView from "./components/SQLView";
 import Landing from "./components/Landing";
+import ArtifactLoading from "./components/ArtifactLoading";
 import "./App.css";
 
 function App() {
   // App views: 'loading' | 'landing' | 'auth' | 'workspace' | 'admin' | 'share'
   const [view, setView] = useState("loading");
   const [authMode, setAuthMode] = useState("login");
-  
+
   const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
-  
+
   const [projects, setProjects] = useState([]);
   const [currentProjectId, setCurrentProjectId] = useState(null);
   const [projectTitle, setProjectTitle] = useState("");
   const [isSaved, setIsSaved] = useState(true);
-  
+
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("srs");
   const [currentArtifacts, setCurrentArtifacts] = useState(null);
-  
+
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareToken, setShareToken] = useState(null);
-  
+
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [convertEmail, setConvertEmail] = useState("");
+  const [convertPassword, setConvertPassword] = useState("");
+  const [convertError, setConvertError] = useState("");
+  const [convertLoading, setConvertLoading] = useState(false);
+
   const [toasts, setToasts] = useState([]);
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
   // Color mode (dark/light) and accent color
   const [colorMode, setColorMode] = useState(() => localStorage.getItem("color-mode") || "dark");
@@ -90,6 +98,15 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  // Auto-grow textarea height
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 140)}px`;
+    }
+  }, [inputText]);
+
   // Boot: Check for share links or auto-refresh session cookies
   useEffect(() => {
     const path = window.location.pathname;
@@ -104,6 +121,47 @@ function App() {
     }
 
     const tryRefresh = async () => {
+      const localAccess = localStorage.getItem("archflow_access_token");
+      const localRefresh = localStorage.getItem("archflow_refresh_token");
+
+      if (localAccess) {
+        try {
+          const meRes = await fetch(`${API_BASE}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${localAccess}` }
+          });
+          if (meRes.ok) {
+            const loggedInUser = await meRes.json();
+            if (loggedInUser && loggedInUser.email) {
+              handleAuthSuccess(localAccess, loggedInUser, localRefresh);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Verifying access token failed, trying refresh token", err);
+        }
+      }
+
+      if (localRefresh) {
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: localRefresh })
+          });
+          const d = await res.json();
+          if (d.access_token) {
+            const meRes = await fetch(`${API_BASE}/api/auth/me`, {
+              headers: { Authorization: `Bearer ${d.access_token}` }
+            });
+            const loggedInUser = await meRes.json();
+            handleAuthSuccess(d.access_token, loggedInUser, d.refresh_token);
+            return;
+          }
+        } catch (err) {
+          console.warn("Refresh token call failed", err);
+        }
+      }
+
       try {
         const res = await fetch(`${API_BASE}/api/auth/refresh`, {
           method: "POST",
@@ -115,7 +173,7 @@ function App() {
             headers: { Authorization: `Bearer ${d.access_token}` }
           });
           const loggedInUser = await meRes.json();
-          handleAuthSuccess(d.access_token, loggedInUser);
+          handleAuthSuccess(d.access_token, loggedInUser, d.refresh_token);
         } else {
           setView("landing");
         }
@@ -148,10 +206,16 @@ function App() {
     }
   };
 
-  const handleAuthSuccess = (accessToken, loggedInUser) => {
+  const handleAuthSuccess = (accessToken, loggedInUser, refreshToken = "") => {
     setToken(accessToken);
     setUser(loggedInUser);
     setView("workspace");
+
+    localStorage.setItem("archflow_access_token", accessToken);
+    if (refreshToken) {
+      localStorage.setItem("archflow_refresh_token", refreshToken);
+    }
+
     loadProjects(accessToken);
   };
 
@@ -161,14 +225,79 @@ function App() {
         method: "POST",
         credentials: "include"
       });
-    } catch {}
+    } catch { }
     setToken("");
     setUser(null);
     setProjects([]);
     setCurrentProjectId(null);
     setCurrentArtifacts(null);
     setMessages([]);
+
+    localStorage.removeItem("archflow_access_token");
+    localStorage.removeItem("archflow_refresh_token");
+
     setView("landing");
+  };
+
+  const handleGuestLogin = async (name) => {
+    let cleanName = name ? name.trim() : "Guest";
+    if (!cleanName) cleanName = "Guest";
+
+    setView("loading");
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/guest?name=${encodeURIComponent(cleanName)}`, {
+        method: "POST"
+      });
+      const d = await res.json();
+      if (d.access_token) {
+        const meRes = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${d.access_token}` }
+        });
+        const loggedInUser = await meRes.json();
+        handleAuthSuccess(d.access_token, loggedInUser, d.refresh_token);
+        showToast(`Logged in as Guest: ${cleanName}!`, "ok");
+      } else {
+        showToast("Failed to initiate guest session", "err");
+        setView("auth");
+      }
+    } catch (err) {
+      showToast("Server error during guest login", "err");
+      setView("auth");
+    }
+  };
+
+  const handleConvertGuestSubmit = async (e) => {
+    e.preventDefault();
+    if (!convertEmail || !convertPassword) {
+      setConvertError("All fields are required");
+      return;
+    }
+    setConvertError("");
+    setConvertLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/convert`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ email: convertEmail, password: convertPassword })
+      });
+      const d = await res.json();
+      if (res.ok) {
+        showToast("Account upgraded successfully!", "ok");
+        setUser(prev => ({ ...prev, role: "user", email: convertEmail }));
+        setIsConvertModalOpen(false);
+        setConvertEmail("");
+        setConvertPassword("");
+      } else {
+        setConvertError(d.detail || "Conversion failed");
+      }
+    } catch (err) {
+      setConvertError("Server error during conversion");
+    } finally {
+      setConvertLoading(false);
+    }
   };
 
   const handleSelectProject = (proj) => {
@@ -525,8 +654,12 @@ function App() {
       <>
         <Landing
           onGetStarted={(mode) => {
-            setAuthMode(mode || "login");
-            setView("auth");
+            if (mode === "guest") {
+              handleGuestLogin();
+            } else {
+              setAuthMode(mode || "login");
+              setView("auth");
+            }
           }}
           brandName="ArchFlow"
           colorMode={colorMode}
@@ -552,6 +685,7 @@ function App() {
           onGoBack={() => setView("landing")}
           colorMode={colorMode}
           onToggleTheme={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')}
+          onGuestLogin={handleGuestLogin}
         />
         <div className="toast-container">
           {toasts.map(t => (
@@ -612,11 +746,12 @@ function App() {
         onCloseSidebar={() => setMobileSidebarOpen(false)}
         isCollapsed={isSidebarCollapsed}
         onCollapse={() => setIsSidebarCollapsed(true)}
+        onConvertGuest={() => setIsConvertModalOpen(true)}
       />
 
       {isSidebarCollapsed && (
-        <button 
-          className="sidebar-expand-handle" 
+        <button
+          className="sidebar-expand-handle"
           onClick={() => setIsSidebarCollapsed(false)}
           title="Expand Sidebar"
         >
@@ -627,15 +762,15 @@ function App() {
       <div className={`chat-area ${mobileActiveView === "chat" ? "active-view" : ""}`}>
         <div className="chat-header">
           <div className="chat-header-left">
-            <button 
-              className="hamburger-btn" 
+            <button
+              className="hamburger-btn"
               onClick={() => {
                 if (window.innerWidth <= 768) {
                   setMobileSidebarOpen(true);
                 } else {
                   setIsSidebarCollapsed(false);
                 }
-              }} 
+              }}
               title="Open Menu"
             >
               <svg viewBox="0 0 24 24">
@@ -654,7 +789,25 @@ function App() {
               disabled={!currentProjectId}
             />
           </div>
-          <div className="chat-header-right">
+          <div className="chat-header-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="mode-toggle chat-theme-toggle" style={{ marginRight: '4px' }}>
+              <button
+                type="button"
+                className={`mode-btn ${colorMode === 'dark' ? 'active' : ''}`}
+                onClick={() => setColorMode('dark')}
+                title="Dark mode"
+              >
+                Dark
+              </button>
+              <button
+                type="button"
+                className={`mode-btn ${colorMode === 'light' ? 'active' : ''}`}
+                onClick={() => setColorMode('light')}
+                title="Light mode"
+              >
+                Light
+              </button>
+            </div>
             {currentProjectId && (
               <button
                 className="share-btn"
@@ -672,9 +825,48 @@ function App() {
         <div className="messages">
           {messages.length === 0 ? (
             <div className="welcome-state">
-              <div className="welcome-icon">📄</div>
-              <h2>ArchFlow Workspace</h2>
-              <p>Enter your system specifications below to generate structured requirement documents, technical UML diagrams, and database schemas.</p>
+              <div className="welcome-icon">✦</div>
+              <h2>ArchFlow System Design Workspace</h2>
+              <p className="welcome-subtitle">
+                This is a specialized AI systems engineer. Describe your product concept, and it will automatically generate industry-standard SRS docs, UML architecture diagrams, and SQL database schemas.
+              </p>
+              
+              <div className="guidelines-container">
+                <div className="guideline-card dos-card">
+                  <div className="guideline-card-header">
+                    <span className="icon">✓</span>
+                    <h3>What to do / input</h3>
+                  </div>
+                  <ul>
+                    <li>
+                      <strong>Describe your product specs:</strong> "E-commerce platform with stripe payment, shopping cart, and order tracking"
+                    </li>
+                    <li>
+                      <strong>Request specific architectures:</strong> "Create a real-time chat service using WebSockets and Redis"
+                    </li>
+                    <li>
+                      <strong>Ask for specific updates:</strong> "Add an order_status enum and coupon table to the SQL schema"
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="guideline-card donts-card">
+                  <div className="guideline-card-header">
+                    <span className="icon">✕</span>
+                    <h3>What to avoid</h3>
+                  </div>
+                  <ul>
+                    <li>
+                      <strong>General chatbot greetings:</strong> Do not just send "hi", "hello", or "hey" – the system needs a software context to generate design specifications.
+                    </li>
+                    <li>
+                      <strong>Unrelated questions:</strong> Avoid generic chat or questions not related to software engineering or architecture designs.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <h3 className="suggestions-title">Or start with a template:</h3>
               <div className="suggestion-grid">
                 <div className="suggestion" onClick={() => handleUseSuggestion("E-commerce Store: Online store with products, cart, orders, and payment flow")}>
                   <strong>E-commerce</strong>Online store with products, cart, orders, and payment flow
@@ -728,6 +920,7 @@ function App() {
         <div className="chat-input-wrap" style={{ paddingTop: 0 }}>
           <div className="chat-input-box">
             <textarea
+              ref={textareaRef}
               className="chat-textarea"
               placeholder={currentProjectId ? "Ask for modifications or details..." : "Describe your project or choose a suggestion..."}
               value={inputText}
@@ -764,8 +957,8 @@ function App() {
       >
         <div className="artifacts-header">
           <div className="artifacts-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button 
-              className="hamburger-btn mobile-only-hamburger" 
+            <button
+              className="hamburger-btn mobile-only-hamburger"
               onClick={() => setMobileSidebarOpen(true)}
               title="Open Menu"
             >
@@ -777,7 +970,25 @@ function App() {
             </button>
             <span className="artifacts-header-title">Artifacts</span>
           </div>
-          <div className="artifacts-header-actions">
+          <div className="artifacts-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="mode-toggle" style={{ marginRight: '6px' }}>
+              <button
+                type="button"
+                className={`mode-btn ${colorMode === 'dark' ? 'active' : ''}`}
+                onClick={() => setColorMode('dark')}
+                title="Dark mode"
+              >
+                Dark
+              </button>
+              <button
+                type="button"
+                className={`mode-btn ${colorMode === 'light' ? 'active' : ''}`}
+                onClick={() => setColorMode('light')}
+                title="Light mode"
+              >
+                Light
+              </button>
+            </div>
             {currentArtifacts && (
               <>
                 {!isSaved && (
@@ -816,7 +1027,9 @@ function App() {
           </div>
         </div>
 
-        {!currentArtifacts ? (
+        {loading ? (
+          <ArtifactLoading />
+        ) : !currentArtifacts ? (
           <div className="artifact-empty">
             <div className="artifact-empty-icon">✦</div>
             <h3>No Artifacts Yet</h3>
@@ -843,17 +1056,17 @@ function App() {
               )}
               <button className={`tab-btn ${activeTab === "sql" ? "active" : ''}`} onClick={() => setActiveTab("sql")}>SQL</button>
             </div>
-            
+
             {/* Diagram tabs: no padding — dv-root fills the full height */}
             {(activeTab === "erd" || activeTab === "class" || activeTab === "sequence" || activeTab === "flowchart" || activeTab === "usecase" || activeTab === "activity" || activeTab === "dfd") && (
               <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                {activeTab === "erd"       && <DiagramView code={currentArtifacts.erd_mermaid}              title="Entity Relationship Diagram" onUpdateCode={(c) => updateLocalArtifact('erd_mermaid', c)} />}
-                {activeTab === "class"     && <DiagramView code={currentArtifacts.class_diagram_mermaid}    title="Class Diagram" onUpdateCode={(c) => updateLocalArtifact('class_diagram_mermaid', c)} />}
-                {activeTab === "sequence"  && <DiagramView code={currentArtifacts.sequence_diagram_mermaid} title="Sequence Diagram" onUpdateCode={(c) => updateLocalArtifact('sequence_diagram_mermaid', c)} />}
-                {activeTab === "flowchart" && <DiagramView code={currentArtifacts.flowchart_mermaid}        title="System Flowchart" onUpdateCode={(c) => updateLocalArtifact('flowchart_mermaid', c)} />}
-                {activeTab === "usecase"   && <DiagramView code={currentArtifacts.use_case_diagram_mermaid} title="Use Case Diagram" onUpdateCode={(c) => updateLocalArtifact('use_case_diagram_mermaid', c)} />}
-                {activeTab === "activity"  && <DiagramView code={currentArtifacts.activity_diagram_mermaid} title="Activity Diagram" onUpdateCode={(c) => updateLocalArtifact('activity_diagram_mermaid', c)} />}
-                {activeTab === "dfd"       && <DiagramView code={currentArtifacts.dfd_mermaid}              title="Data Flow Diagram (DFD)" onUpdateCode={(c) => updateLocalArtifact('dfd_mermaid', c)} />}
+                {activeTab === "erd" && <DiagramView code={currentArtifacts.erd_mermaid} title="Entity Relationship Diagram" onUpdateCode={(c) => updateLocalArtifact('erd_mermaid', c)} />}
+                {activeTab === "class" && <DiagramView code={currentArtifacts.class_diagram_mermaid} title="Class Diagram" onUpdateCode={(c) => updateLocalArtifact('class_diagram_mermaid', c)} />}
+                {activeTab === "sequence" && <DiagramView code={currentArtifacts.sequence_diagram_mermaid} title="Sequence Diagram" onUpdateCode={(c) => updateLocalArtifact('sequence_diagram_mermaid', c)} />}
+                {activeTab === "flowchart" && <DiagramView code={currentArtifacts.flowchart_mermaid} title="System Flowchart" onUpdateCode={(c) => updateLocalArtifact('flowchart_mermaid', c)} />}
+                {activeTab === "usecase" && <DiagramView code={currentArtifacts.use_case_diagram_mermaid} title="Use Case Diagram" onUpdateCode={(c) => updateLocalArtifact('use_case_diagram_mermaid', c)} />}
+                {activeTab === "activity" && <DiagramView code={currentArtifacts.activity_diagram_mermaid} title="Activity Diagram" onUpdateCode={(c) => updateLocalArtifact('activity_diagram_mermaid', c)} />}
+                {activeTab === "dfd" && <DiagramView code={currentArtifacts.dfd_mermaid} title="Data Flow Diagram (DFD)" onUpdateCode={(c) => updateLocalArtifact('dfd_mermaid', c)} />}
               </div>
             )}
 
@@ -876,9 +1089,68 @@ function App() {
         onToast={showToast}
       />
 
+      {isConvertModalOpen && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setIsConvertModalOpen(false)}>
+          <div className="modal-box">
+            <div className="modal-header">
+              <h3>Upgrade Account</h3>
+              <button className="modal-close" onClick={() => setIsConvertModalOpen(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: '13px', color: 'var(--text-sec)', marginBottom: '15px' }}>
+                Enter your email and password to convert your guest account to a permanent account. Your projects will be saved!
+              </p>
+              <form onSubmit={handleConvertGuestSubmit}>
+                <div className="auth-input-group" style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label className="auth-input-label" style={{ fontSize: '12px', color: 'var(--text-main)' }} htmlFor="convert-email">Email</label>
+                  <input
+                    id="convert-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="auth-custom-input"
+                    value={convertEmail}
+                    onChange={(e) => setConvertEmail(e.target.value)}
+                    disabled={convertLoading}
+                    style={{ background: 'var(--bg-sec)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 12px', color: 'var(--text-main)' }}
+                    required
+                  />
+                </div>
+                <div className="auth-input-group" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label className="auth-input-label" style={{ fontSize: '12px', color: 'var(--text-main)' }} htmlFor="convert-password">Password</label>
+                  <input
+                    id="convert-password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="auth-custom-input"
+                    value={convertPassword}
+                    onChange={(e) => setConvertPassword(e.target.value)}
+                    disabled={convertLoading}
+                    style={{ background: 'var(--bg-sec)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 12px', color: 'var(--text-main)' }}
+                    required
+                  />
+                </div>
+                {convertError && (
+                  <div className="auth-error-msg" role="alert" style={{ marginBottom: '12px', color: '#ff4f6a', fontSize: '12px' }}>
+                    {convertError}
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  className="auth-submit-pill-btn"
+                  style={{ width: '100%', padding: '10px', background: 'var(--accent)', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                  disabled={convertLoading}
+                >
+                  {convertLoading ? "Upgrading..." : "Save Progress & Upgrade"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Bottom Navigation Bar */}
       <div className="mobile-bottom-nav">
-        <button 
+        <button
           className={`mobile-bottom-tab ${mobileActiveView === 'chat' ? 'active' : ''}`}
           onClick={() => setMobileActiveView('chat')}
         >
@@ -887,7 +1159,7 @@ function App() {
           </svg>
           <span className="mobile-bottom-label">Chat</span>
         </button>
-        <button 
+        <button
           className={`mobile-bottom-tab ${mobileActiveView === 'artifacts' ? 'active' : ''}`}
           onClick={() => setMobileActiveView('artifacts')}
         >
