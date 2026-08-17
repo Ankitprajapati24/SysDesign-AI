@@ -29,6 +29,32 @@ def _sanitize_flowchart(code: str) -> str:
         if stripped in ("```mermaid", "```", "```json"):
             continue
 
+        # Repair actor definition: actor Name("Label") or actor Name("(Label"))
+        # Match patterns like: actor Client("(Client")) or actor Client("Client")
+        actor_match = re.match(r'^\s*actor\s+(\w+)\s*(.*)$', line)
+        if actor_match:
+            node_id = actor_match.group(1)
+            raw_label = actor_match.group(2) or ""
+            label = node_id
+            quote_match = re.search(r'"([^"]+)"', raw_label)
+            if quote_match:
+                label = quote_match.group(1)
+            else:
+                paren_match = re.search(r'\(([^)]+)\)', raw_label)
+                if paren_match:
+                    label = paren_match.group(1)
+            label = label.strip('()\'" ')
+            line = f'    {node_id}(("{label}"))'
+            stripped = line.strip()
+
+        # Fix sequence diagram style arrows: -> or ->> in flowchart
+        line = line.replace("->>", "-->")
+        line = re.sub(r'(?<!-)->(?!>)', '-->', line)
+
+        # Repair malformed double-paren actors: ID("(Label")) or ID(("Label")) etc.
+        # e.g., SA("(SaaS Administrator")) --> UC5
+        line = re.sub(r'(\b\w+)\s*\(\s*\"?\s*\(\s*([^\"\(\)]+?)\s*\"?\s*\)\s*\)', r'\1(("\2"))', line)
+
         # Fix unquoted node labels that contain parentheses or special chars.
         # Pattern: NodeID[Label (with parens)] → NodeID["Label (with parens)"]
         # Also handles ([...]), ((...))), {{}}, etc.
