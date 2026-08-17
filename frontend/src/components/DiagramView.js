@@ -5,6 +5,9 @@ mermaid.initialize({
   startOnLoad: false,
   theme: "neutral",
   securityLevel: "loose",
+  parseError: (err, hash) => {
+    // Custom error handler to prevent Mermaid from appending the default error elements to document.body
+  }
 });
 
 /* ────────────────────────────────────────────────
@@ -34,6 +37,41 @@ function sanitizeMermaid(code) {
     }
 
     if (isFlowchart) {
+      // Fix actor declarations: actor Client("(Client")) -> Client(("Client"))
+      if (/^\s*actor\s+/i.test(line)) {
+        const match = line.match(/^\s*actor\s+(\w+)\s*(.*)$/i);
+        if (match) {
+          const id = match[1];
+          const rawLabel = match[2] || "";
+          let label = id;
+          const quoteMatch = rawLabel.match(/"([^"]+)"/);
+          if (quoteMatch) {
+            label = quoteMatch[1];
+          } else {
+            const parenMatch = rawLabel.match(/\(([^)]+)\)/);
+            if (parenMatch) {
+              label = parenMatch[1];
+            }
+          }
+          const cleanLabel = label.trim().replace(/^['"()]+|['"()]+$/g, "");
+          line = `    ${id}(("${cleanLabel}"))`;
+        }
+      }
+
+      // Fix sequence diagram style arrows: -> or ->> in flowchart
+      line = line.replace(/->>/g, "-->");
+      line = line.replace(/(?<!-)->(?!>)/g, "-->");
+
+      // Repair malformed double-paren actors: ID("(Label")) or ID(("Label")) etc.
+      // e.g., SA("(SaaS Administrator")) --> UC5
+      line = line.replace(
+        /(\b\w+)\s*\(\s*"?\s*\(\s*([^"()]+?)\s*"?\s*\)\s*\)/g,
+        (_, id, label) => {
+          const cleanLabel = label.trim().replace(/^['"()]+|['"()]+$/g, "");
+          return `${id}(("${cleanLabel}"))`;
+        }
+      );
+
       // Fix unquoted labels with parentheses in square brackets
       // e.g.  Process[Handle Payment (Stripe)] → Process["Handle Payment (Stripe)"]
       line = line.replace(
@@ -169,9 +207,9 @@ function DiagramView({ code, title, onUpdateCode }) {
   useEffect(() => {
     const render = async () => {
       if (!diagramRef.current || !editableCode.trim()) return;
+      const id = "diag-" + Date.now();
       try {
         setError(null);
-        const id = "diag-" + Date.now();
         const { svg } = await mermaid.render(id, editableCode);
         diagramRef.current.innerHTML = svg;
         // Keep a ref to the inner SVG element for download
@@ -179,8 +217,12 @@ function DiagramView({ code, title, onUpdateCode }) {
         if (svgRef.current) {
           svgRef.current.style.overflow = "visible";
         }
-      } catch {
+      } catch (err) {
         setError("Diagram syntax error. Edit the source below to fix.");
+        const tempDiv = document.getElementById(id) || document.getElementById("d" + id);
+        if (tempDiv) {
+          tempDiv.remove();
+        }
       }
     };
     render();
