@@ -67,6 +67,14 @@ def _sanitize_flowchart(code: str) -> str:
         # Remove stray semicolons at end of lines (not valid in flowchart)
         if stripped.endswith(";") and not stripped.startswith("%%"):
             line = line.rstrip(";")
+            stripped = line.strip()
+
+        # Replace reserved keyword node ID 'end' (but not when it is just the end of a subgraph)
+        if stripped != "end":
+            parts = line.split('"')
+            for i in range(0, len(parts), 2):
+                parts[i] = re.sub(r'\bend\b', 'end_node', parts[i])
+            line = '"'.join(parts)
 
         cleaned.append(line)
 

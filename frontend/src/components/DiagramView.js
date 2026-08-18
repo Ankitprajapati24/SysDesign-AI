@@ -24,7 +24,7 @@ function sanitizeMermaid(code) {
   const isErDiag = /^\s*erDiagram/i.test(code);
 
   for (let line of lines) {
-    const stripped = line.trim();
+    let stripped = line.trim();
 
     // Remove accidental code fences
     if (stripped === "```mermaid" || stripped === "```" || stripped === "```json") {
@@ -91,6 +91,16 @@ function sanitizeMermaid(code) {
       // Remove stray semicolons
       if (stripped.endsWith(";") && !stripped.startsWith("%%")) {
         line = line.replace(/;$/, "");
+      }
+
+      // Replace reserved keyword node ID 'end' (but not when it is just the end of a subgraph)
+      if (stripped !== "end") {
+        let parts = line.split('"');
+        for (let i = 0; i < parts.length; i += 2) {
+          parts[i] = parts[i].replace(/\bend\b/g, "end_node");
+        }
+        line = parts.join('"');
+        stripped = line.trim();
       }
     }
 
