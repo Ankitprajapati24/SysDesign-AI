@@ -4,7 +4,7 @@ import Logo from './Logo';
 export default function Landing({ onGetStarted, brandName = "ArchFlow", colorMode, onToggleTheme }) {
   // Static content that can be easily edited later
   const developer = [
-    { name: "Ankit Prajapati"" }
+    { name: "Ankit Prajapati" }
     //{ name: "Anuj Patel", role: "CSE 3rd Year" },
     //{ name: "Minisha Solanki", role: "CSE 3rd Year" },
     //{ name: "Aniza Hashmi", role: "CSE 3rd Year" }
