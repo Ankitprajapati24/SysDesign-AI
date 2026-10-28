@@ -4,7 +4,7 @@ import Logo from './Logo';
 export default function Landing({ onGetStarted, brandName = "ArchFlow", colorMode, onToggleTheme }) {
   // Static content that can be easily edited later
   const developer = [
-    { name: "Ankit Prajapati" }
+    { name: "Ankit Prajapati" },
     //{ name: "Anuj Patel", role: "CSE 3rd Year" },
     //{ name: "Minisha Solanki", role: "CSE 3rd Year" },
     //{ name: "Aniza Hashmi", role: "CSE 3rd Year" }
@@ -92,12 +92,12 @@ export default function Landing({ onGetStarted, brandName = "ArchFlow", colorMod
 
       {/* ── Team Members Section (For college project showcase) ── */}
       <section className="landing-minimal-team">
-        <h2 className="team-section-title">Project Team</h2>
+        <h2 className="team-section-title">Developer</h2>
         <div className="landing-minimal-team-grid">
           {developer.map((member, i) => (
             <div className="team-member-col" key={i}>
               <span className="member-name">{member.name}</span>
-              <span className="member-role">{member.role}</span>
+          
             </div>
           ))}
         </div>
