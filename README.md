@@ -1,4 +1,4 @@
-# SDE AI Tool 🚀
+# SDE AI Tool build to Generate Articrafts 🚀 
 
 An intelligent AI-powered Software Development Engineering tool that generates Software Requirement Specifications (SRS), SQL queries, and visual diagrams from natural language input using Google's Gemini AI.
 
@@ -6,7 +6,7 @@ An intelligent AI-powered Software Development Engineering tool that generates S
 
 ## 📋 Table of Contents
 
-- [Project Overview](#project-overview)
+- [Project Overview](#project-overview)to
 - [Folder Structure](#folder-structure)
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
